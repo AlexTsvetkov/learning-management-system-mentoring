@@ -30,8 +30,7 @@ public class Course {
     @Column(precision = 19, scale = 2)
     private BigDecimal coinsPaid;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "settings_id")
+    @OneToOne(mappedBy = "course", cascade = CascadeType.ALL)
     private CourseSettings settings;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
