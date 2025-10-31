@@ -27,10 +27,21 @@ public class CourseService {
         return repo.save(c);
     }
 
-    public Optional<Course> findById(UUID id) { return repo.findById(id); }
-    public List<Course> findAll() { return repo.findAll(); }
-    public void delete(UUID id) { repo.deleteById(id); }
-    public Course update(Course c) { return repo.save(c); }
+    public Optional<Course> findById(UUID id) {
+        return repo.findById(id);
+    }
+
+    public List<Course> findAll() {
+        return repo.findAll();
+    }
+
+    public void delete(UUID id) {
+        repo.deleteById(id);
+    }
+
+    public Course update(Course c) {
+        return repo.save(c);
+    }
 
     public List<Course> findStartingBetween(LocalDateTime start, LocalDateTime end) {
         return repo.findBySettings_StartDateBetween(start, end);
