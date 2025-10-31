@@ -10,14 +10,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 public class StudentServiceTest {
     @Test
     void chargeCoinsReducesBalance() {
         StudentRepository repo = Mockito.mock(StudentRepository.class);
         Student s = Student.builder().id(UUID.randomUUID()).coins(java.math.BigDecimal.valueOf(100)).build();
-        Mockito.when(repo.findById(s.getId())).thenReturn(Optional.of(s));
-        Mockito.when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
+        when(repo.findById(s.getId())).thenReturn(Optional.of(s));
+        when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
         StudentService service = new StudentService(repo);
         boolean ok = service.chargeCoins(s.getId(), java.math.BigDecimal.valueOf(30));
         assertThat(ok).isTrue();

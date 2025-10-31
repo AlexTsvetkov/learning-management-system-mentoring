@@ -10,12 +10,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 public class StudentServiceAdditionalTest {
     @Test
     void createAssignsIdIfMissing() {
         StudentRepository repo = Mockito.mock(StudentRepository.class);
-        Mockito.when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
+        when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
         StudentService service = new StudentService(repo);
 
         Student s = Student.builder().coins(java.math.BigDecimal.ZERO).build();

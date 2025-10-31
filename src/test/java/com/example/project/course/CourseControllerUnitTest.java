@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 public class CourseControllerUnitTest {
 
@@ -24,8 +25,8 @@ public class CourseControllerUnitTest {
         Course c = Course.builder().id(id).title("Spring").build();
         CourseDto dto = CourseDto.builder().id(id).title("Spring").build();
 
-        Mockito.when(service.findById(id)).thenReturn(Optional.of(c));
-        Mockito.when(mapper.toDto(c)).thenReturn(dto);
+        when(service.findById(id)).thenReturn(Optional.of(c));
+        when(mapper.toDto(c)).thenReturn(dto);
 
         CourseController controller = new CourseController(service, mapper);
         ResponseEntity<CourseDto> resp = controller.get(id);
@@ -40,7 +41,7 @@ public class CourseControllerUnitTest {
         CourseMapper mapper = Mockito.mock(CourseMapper.class);
         UUID id = UUID.randomUUID();
 
-        Mockito.when(service.findById(id)).thenReturn(Optional.empty());
+        when(service.findById(id)).thenReturn(Optional.empty());
 
         CourseController controller = new CourseController(service, mapper);
         ResponseEntity<CourseDto> resp = controller.get(id);

@@ -1,4 +1,4 @@
-package com.example.project.common;
+package com.example.project.exception.handler;
 
 import com.example.project.exception.InsufficientBalanceException;
 import jakarta.persistence.EntityNotFoundException;

@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 public class CourseServiceTest {
 
@@ -23,7 +24,7 @@ public class CourseServiceTest {
 
         LocalDateTime start = LocalDateTime.now().plusDays(1).withHour(0);
         LocalDateTime end = start.plusDays(1).minusSeconds(1);
-        Mockito.when(repo.findBySettings_StartDateBetween(start, end)).thenReturn(Collections.emptyList());
+        when(repo.findBySettings_StartDateBetween(start, end)).thenReturn(Collections.emptyList());
         assertThat(service.findStartingBetween(start, end)).isEmpty();
     }
 
@@ -38,9 +39,9 @@ public class CourseServiceTest {
         Course c = Course.builder().id(courseId).students(new ArrayList<>()).build();
         Student s = Student.builder().id(studentId).build();
 
-        Mockito.when(repo.findById(courseId)).thenReturn(Optional.of(c));
-        Mockito.when(studentRepo.findById(studentId)).thenReturn(Optional.of(s));
-        Mockito.when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
+        when(repo.findById(courseId)).thenReturn(Optional.of(c));
+        when(studentRepo.findById(studentId)).thenReturn(Optional.of(s));
+        when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
 
         service.enrollStudent(courseId, studentId);
 
