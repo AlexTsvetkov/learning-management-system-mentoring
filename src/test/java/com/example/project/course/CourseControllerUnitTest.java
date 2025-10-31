@@ -1,0 +1,50 @@
+package com.example.project.course;
+
+import com.example.project.course.controller.CourseController;
+import com.example.project.course.dto.CourseDto;
+import com.example.project.course.mapper.CourseMapper;
+import com.example.project.course.model.Course;
+import com.example.project.course.service.CourseService;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.http.ResponseEntity;
+
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.*;
+
+public class CourseControllerUnitTest {
+
+    @Test
+    void getReturnsCourseDtoWhenFound() {
+        CourseService service = Mockito.mock(CourseService.class);
+        CourseMapper mapper = Mockito.mock(CourseMapper.class);
+
+        UUID id = UUID.randomUUID();
+        Course c = Course.builder().id(id).title("Spring").build();
+        CourseDto dto = CourseDto.builder().id(id).title("Spring").build();
+
+        Mockito.when(service.findById(id)).thenReturn(Optional.of(c));
+        Mockito.when(mapper.toDto(c)).thenReturn(dto);
+
+        CourseController controller = new CourseController(service, mapper);
+        ResponseEntity<CourseDto> resp = controller.get(id);
+
+        assertThat(resp.getStatusCodeValue()).isEqualTo(200);
+        assertThat(resp.getBody()).isEqualTo(dto);
+    }
+
+    @Test
+    void getReturnsNotFoundWhenMissing() {
+        CourseService service = Mockito.mock(CourseService.class);
+        CourseMapper mapper = Mockito.mock(CourseMapper.class);
+        UUID id = UUID.randomUUID();
+
+        Mockito.when(service.findById(id)).thenReturn(Optional.empty());
+
+        CourseController controller = new CourseController(service, mapper);
+        ResponseEntity<CourseDto> resp = controller.get(id);
+
+        assertThat(resp.getStatusCodeValue()).isEqualTo(404);
+    }
+}
