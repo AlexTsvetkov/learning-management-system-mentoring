@@ -46,7 +46,7 @@
             <column name="course_id" type="UUID"/>
         </createTable>
 
-        <createTable tableName="course_students">
+        <createTable tableName="student_courses">
             <column name="course_id" type="UUID"/>
             <column name="student_id" type="UUID"/>
         </createTable>

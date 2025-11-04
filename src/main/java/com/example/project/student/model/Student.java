@@ -3,6 +3,7 @@ package com.example.project.student.model;
 import com.example.project.course.model.Course;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
@@ -37,7 +38,7 @@ public class Student {
     @Column(precision = 19, scale = 2)
     private BigDecimal coins;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "student_courses",
             joinColumns = @JoinColumn(name = "student_id"),

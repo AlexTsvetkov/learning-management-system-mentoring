@@ -28,6 +28,6 @@ public class CourseSettings {
     private Boolean isPublic;
 
     @OneToOne
-    @JoinColumn(name = "course_id")
+    @JoinColumn(name = "id")
     private Course course;
 }
