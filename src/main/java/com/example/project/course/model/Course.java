@@ -47,5 +47,5 @@ public class Course {
     private Set<Lesson> lessons;
 
     @ManyToMany(mappedBy = "courses")
-    private List<Student> students = new ArrayList<>();
+    private final List<Student> students = new ArrayList<>();
 }
