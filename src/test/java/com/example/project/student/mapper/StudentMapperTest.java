@@ -52,7 +52,7 @@ class StudentMapperTest {
 
         // Check nested mapping
         assertThat(dto.getCourses()).hasSize(1);
-        CourseDto courseDto = dto.getCourses().get(0);
+        CourseDto courseDto = dto.getCourses().getFirst();
         assertThat(courseDto.getTitle()).isEqualTo(course.getTitle());
         assertThat(courseDto.getDescription()).isEqualTo(course.getDescription());
         assertThat(courseDto.getPrice()).isEqualByComparingTo(course.getPrice());
@@ -90,7 +90,7 @@ class StudentMapperTest {
 
         // Check nested mapping
         assertThat(student.getCourses()).hasSize(1);
-        Course mappedCourse = student.getCourses().get(0);
+        Course mappedCourse = student.getCourses().getFirst();
         assertThat(mappedCourse.getTitle()).isEqualTo(courseDto.getTitle());
         assertThat(mappedCourse.getDescription()).isEqualTo(courseDto.getDescription());
         assertThat(mappedCourse.getPrice()).isEqualByComparingTo(courseDto.getPrice());

@@ -54,7 +54,7 @@ class CourseControllerTest {
         List<CourseDto> result = controller.all();
 
         assertEquals(1, result.size());
-        assertEquals("Math 101", result.get(0).getTitle());
+        assertEquals("Math 101", result.getFirst().getTitle());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(course);
     }
