@@ -42,17 +42,17 @@ public class StudentController {
 
     @PostMapping
     public ResponseEntity<StudentDto> create(@Valid @RequestBody StudentDto dto) {
-        Student s = mapper.toEntity(dto);
-        Student created = service.create(s);
-        return ResponseEntity.ok(mapper.toDto(created));
+        Student student = mapper.toEntity(dto);
+        Student createdStudent = service.create(student);
+        return ResponseEntity.ok(mapper.toDto(createdStudent));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<StudentDto> update(@PathVariable UUID id, @Valid @RequestBody StudentDto dto) {
         dto.setId(id);
-        Student s = mapper.toEntity(dto);
-        Student updated = service.update(s);
-        return ResponseEntity.ok(mapper.toDto(updated));
+        Student student = mapper.toEntity(dto);
+        Student updatedStudent = service.update(student);
+        return ResponseEntity.ok(mapper.toDto(updatedStudent));
     }
 
     @DeleteMapping("/{id}")
