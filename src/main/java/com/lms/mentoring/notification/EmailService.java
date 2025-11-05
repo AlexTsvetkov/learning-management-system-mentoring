@@ -52,7 +52,7 @@ public class EmailService {
             helper.setText(htmlBody, true); // true = HTML email
             mailSender.send(message);
             log.info("Sent course start notification to {}", to);
-        } catch (MessagingException ex) {
+        } catch (Exception ex) {
             log.error("Failed to send course start email to {}: {}", to, ex.getMessage(), ex);
         }
     }

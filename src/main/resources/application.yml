@@ -22,12 +22,16 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   mail:
-    host: smtp.mailtrap.io
-    port: 587
-    username: your_mailtrap_user
-    password: your_mailtrap_pass
-#    properties.mail.smtp.auth: true
-#    properties.mail.smtp.starttls.enable: true
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: 13aa81e48ff568
+    password: a82e0758f7037f
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 management:
   endpoints:
