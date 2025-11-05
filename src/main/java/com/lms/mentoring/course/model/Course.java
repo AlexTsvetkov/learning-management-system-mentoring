@@ -1,5 +1,6 @@
 package com.lms.mentoring.course.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.lms.mentoring.student.model.Student;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
@@ -51,6 +52,7 @@ public class Course {
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "settings_id")
+    @JsonManagedReference
     private CourseSettings settings;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

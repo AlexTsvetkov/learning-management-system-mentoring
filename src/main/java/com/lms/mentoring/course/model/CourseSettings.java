@@ -1,5 +1,6 @@
 package com.lms.mentoring.course.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
@@ -35,6 +36,7 @@ public class CourseSettings {
     private Boolean isPublic;
 
     @OneToOne(mappedBy = "settings")
+    @JsonBackReference
     private Course course;
 
     @PrePersist
