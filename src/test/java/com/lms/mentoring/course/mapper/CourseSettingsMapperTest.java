@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CourseSettingsMapperTest {
 
-    private CourseSettingsMapper mapper = Mappers.getMapper(CourseSettingsMapper.class);
+    private final CourseSettingsMapper mapper = Mappers.getMapper(CourseSettingsMapper.class);
 
     @Test
     void shouldMapEntityToDto() {

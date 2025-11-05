@@ -7,6 +7,7 @@ import com.lms.mentoring.course.model.Course;
 import com.lms.mentoring.course.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
@@ -32,7 +33,7 @@ public class CourseControllerUnitTest {
         CourseController controller = new CourseController(service, mapper);
         ResponseEntity<CourseDto> resp = controller.get(id);
 
-        assertThat(resp.getStatusCodeValue()).isEqualTo(200);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resp.getBody()).isEqualTo(dto);
     }
 
@@ -47,6 +48,6 @@ public class CourseControllerUnitTest {
         CourseController controller = new CourseController(service, mapper);
         ResponseEntity<CourseDto> resp = controller.get(id);
 
-        assertThat(resp.getStatusCodeValue()).isEqualTo(404);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

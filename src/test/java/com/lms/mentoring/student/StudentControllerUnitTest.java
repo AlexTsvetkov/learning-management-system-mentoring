@@ -7,6 +7,7 @@ import com.lms.mentoring.student.model.Student;
 import com.lms.mentoring.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
@@ -31,7 +32,8 @@ public class StudentControllerUnitTest {
         StudentController controller = new StudentController(service, mapper);
         ResponseEntity<StudentDto> resp = controller.get(id);
 
-        assertThat(resp.getStatusCodeValue()).isEqualTo(200);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
         assertThat(resp.getBody()).isEqualTo(dto);
     }
 
@@ -46,6 +48,6 @@ public class StudentControllerUnitTest {
         StudentController controller = new StudentController(service, mapper);
         ResponseEntity<StudentDto> resp = controller.get(id);
 
-        assertThat(resp.getStatusCodeValue()).isEqualTo(404);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }

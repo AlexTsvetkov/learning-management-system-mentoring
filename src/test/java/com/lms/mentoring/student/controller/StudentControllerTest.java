@@ -56,7 +56,7 @@ class StudentControllerTest {
         List<StudentDto> result = controller.all();
 
         assertEquals(1, result.size());
-        assertEquals("John", result.get(0).getFirstName());
+        assertEquals("John", result.getFirst().getFirstName());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(student);
     }
