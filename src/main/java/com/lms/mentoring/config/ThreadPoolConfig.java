@@ -1,5 +1,6 @@
 package com.lms.mentoring.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -12,13 +13,9 @@ import java.util.concurrent.Executor;
 public class ThreadPoolConfig {
 
     @Bean("emailNotificationExecutor")
+    @ConfigurationProperties(prefix = "app.email-executor")
     public Executor emailExecutor() {
-        ThreadPoolTaskExecutor t = new ThreadPoolTaskExecutor();
-        t.setCorePoolSize(5);
-        t.setMaxPoolSize(20);
-        t.setQueueCapacity(50);
-        t.setThreadNamePrefix("email-notification-executor-");
-        t.initialize();
-        return t;
+        // properties are bound automatically from YAML
+        return new ThreadPoolTaskExecutor();
     }
 }

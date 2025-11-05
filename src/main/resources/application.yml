@@ -42,3 +42,10 @@ management:
 spring.jpa.open-in-view: false
 server:
   port: 8080
+
+app:
+  email-executor:
+    core-pool-size: 5
+    max-pool-size: 20
+    queue-capacity: 50
+    thread-name-prefix: "email-executor-"
