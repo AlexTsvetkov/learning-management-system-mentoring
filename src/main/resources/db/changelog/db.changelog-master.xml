@@ -5,52 +5,10 @@
         http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="1" author="assistant">
+    <include file="db/changelog/db.changelog-create-schema.xml" relativeToChangelogFile="false"/>
 
-        <createTable tableName="students">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="first_name" type="varchar(255)"/>
-            <column name="last_name" type="varchar(255)"/>
-            <column name="email" type="varchar(255)"/>
-            <column name="date_of_birth" type="DATE"/>
-            <column name="coins" type="DECIMAL(19,2)"/>
-        </createTable>
-
-        <createTable tableName="course_settings">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="start_date" type="TIMESTAMP"/>
-            <column name="end_date" type="TIMESTAMP"/>
-            <column name="is_public" type="boolean"/>
-        </createTable>
-
-        <createTable tableName="courses">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="title" type="varchar(255)"/>
-            <column name="description" type="varchar(2000)"/>
-            <column name="price" type="DECIMAL(19,2)"/>
-            <column name="coins_paid" type="DECIMAL(19,2)"/>
-            <column name="settings_id" type="UUID"/>
-        </createTable>
-
-        <createTable tableName="lessons">
-            <column name="id" type="UUID">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="title" type="varchar(255)"/>
-            <column name="duration" type="INT"/>
-            <column name="course_id" type="UUID"/>
-        </createTable>
-
-        <createTable tableName="student_courses">
-            <column name="course_id" type="UUID"/>
-            <column name="student_id" type="UUID"/>
-        </createTable>
-
+    <changeSet id="init-data-sql" author="aliaksandr.tsviatkou">
+        <sqlFile path="db/changelog/sql/data/init-data.sql" relativeToChangelogFile="false"/>
     </changeSet>
+
 </databaseChangeLog>
