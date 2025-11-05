@@ -1,14 +1,16 @@
 package com.lms.mentoring.course.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -31,7 +33,7 @@ public class CourseDto {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
 
-    @DecimalMin(value = "0.0", inclusive = true, message = "Coins paid cannot be negative")
+    @DecimalMin(value = "0.0", message = "Coins paid cannot be negative")
     private BigDecimal coinsPaid;
 
     @Valid
