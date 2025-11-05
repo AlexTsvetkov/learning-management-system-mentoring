@@ -1,18 +1,18 @@
 package com.lms.mentoring.course.model;
 
 import com.lms.mentoring.student.model.Student;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.Value;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,17 +20,27 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+
 @Entity
 @Table(name = "courses")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"lessons", "students", "settings"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Course {
     @Id
+    @EqualsAndHashCode.Include
     private UUID id;
 
+    @NotBlank
+    @Size(max = 255)
+    @Column(nullable = false)
     private String title;
+
+    @Size(max = 2000)
     @Column(length = 2000)
     private String description;
 
@@ -40,7 +50,8 @@ public class Course {
     @Column(precision = 19, scale = 2)
     private BigDecimal coinsPaid;
 
-    @OneToOne(mappedBy = "course", cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "settings_id") // FK column in courses
     private CourseSettings settings;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,7 +40,9 @@ public class CourseStartNotificationScheduler {
      * Runs daily at 07:00 Europe/Berlin time.
      * Finds courses starting the next day and sends emails to all enrolled students.
      */
-    @Scheduled(cron = "0 0 7 * * *", zone = "Europe/Berlin")
+//    @Scheduled(cron = "0 0 7 * * *", zone = "Europe/Berlin")
+    @Scheduled(fixedRate = 30000) // Runs every 30 seconds (30000 milliseconds)
+    @Transactional(readOnly = true)
     public void notifyCoursesStartingTomorrow() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
         LocalDateTime startOfDay = LocalDateTime.of(tomorrow, LocalTime.MIN);

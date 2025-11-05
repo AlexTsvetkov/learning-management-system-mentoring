@@ -34,6 +34,7 @@ public class EmailService {
      * Sends an email to a student reminding them that their course starts tomorrow.
      */
     public void sendCourseStartingNotification(Student student, Course course) {
+        log.info("Sending course starting notification for student: {} and course: {}", student, course);
         String to = student.getEmail();
         String subject = String.format("Reminder: Course \"%s\" starts tomorrow", course.getTitle());
         String htmlBody = buildEmailTemplate(student, course);
@@ -50,9 +51,9 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true); // true = HTML email
             mailSender.send(message);
-            log.info("✅ Sent course start notification to {}", to);
+            log.info("Sent course start notification to {}", to);
         } catch (MessagingException ex) {
-            log.error("❌ Failed to send course start email to {}: {}", to, ex.getMessage(), ex);
+            log.error("Failed to send course start email to {}: {}", to, ex.getMessage(), ex);
         }
     }
 

@@ -10,8 +10,8 @@ INSERT INTO students (id, first_name, last_name, email, date_of_birth, coins) VA
 
 -- Course Settings
 INSERT INTO course_settings (id, start_date, end_date, is_public) VALUES
-                                                                      ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '2025-01-01 09:00:00', '2025-03-01 17:00:00', TRUE),
-                                                                      ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '2025-02-01 09:00:00', '2025-04-01 17:00:00', FALSE);
+                                                                      ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '2025-11-06 09:00:00', '2025-12-01 17:00:00', TRUE),
+                                                                      ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '2025-11-06 09:00:00', '2025-12-01 17:00:00', FALSE);
 
 -- Courses
 INSERT INTO courses (id, title, description, price, coins_paid, settings_id) VALUES

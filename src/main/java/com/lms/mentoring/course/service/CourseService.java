@@ -33,7 +33,7 @@ public class CourseService {
     }
 
     public List<Course> findAll() {
-        return repo.findAll();
+        return repo.findAllWithSettings();
     }
 
     public void delete(UUID id) {
