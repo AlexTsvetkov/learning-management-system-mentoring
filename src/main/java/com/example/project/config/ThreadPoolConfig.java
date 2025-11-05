@@ -2,6 +2,8 @@ package com.example.project.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -11,26 +13,17 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
+@EnableScheduling
 public class ThreadPoolConfig {
 
-    @Bean(name = "notifExecutor")
-    public Executor taskExecutor() {
-        ThreadPoolExecutor exec = new ThreadPoolExecutor(
-                4, 10, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(200),
-                new ThreadFactory() {
-                    private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
-
-                    public Thread newThread(Runnable r) {
-                        Thread t = defaultFactory.newThread(r);
-                        t.setName("notif-pool-" + t.getId());
-                        t.setDaemon(true);
-                        return t;
-                    }
-                },
-                new ThreadPoolExecutor.CallerRunsPolicy()
-        );
-        exec.allowCoreThreadTimeOut(true);
-        return exec;
+    @Bean("emailNotificationExecutor")
+    public Executor emailExecutor() {
+        ThreadPoolTaskExecutor t = new ThreadPoolTaskExecutor();
+        t.setCorePoolSize(5);
+        t.setMaxPoolSize(20);
+        t.setQueueCapacity(50);
+        t.setThreadNamePrefix("email-notification-executor-");
+        t.initialize();
+        return t;
     }
 }
