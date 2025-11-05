@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,7 +39,7 @@ public class CourseServiceTest {
 
         UUID courseId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
-        Course c = Course.builder().id(courseId).students(new ArrayList<>()).build();
+        Course c = Course.builder().id(courseId).students(new HashSet<>()).build();
         Student s = Student.builder().id(studentId).build();
 
         when(repo.findById(courseId)).thenReturn(Optional.of(c));

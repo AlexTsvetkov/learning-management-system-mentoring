@@ -9,9 +9,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,15 +39,23 @@ import java.util.UUID;
 @Builder
 public class Student {
     @Id
+    @EqualsAndHashCode.Include
     private UUID id;
 
+    @NotBlank
     private String firstName;
+    @NotBlank
     private String lastName;
+    @Email
+    @NotBlank
     private String email;
+    @Past
+    @NotNull
     private LocalDate dateOfBirth;
-
+    @PositiveOrZero
     @Column(precision = 19, scale = 2)
-    private BigDecimal coins;
+    @Builder.Default
+    private BigDecimal coins = BigDecimal.ZERO;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

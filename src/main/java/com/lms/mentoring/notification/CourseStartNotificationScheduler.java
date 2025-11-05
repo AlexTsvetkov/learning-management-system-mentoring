@@ -1,7 +1,9 @@
 package com.lms.mentoring.notification;
 
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.model.Course;
 import com.lms.mentoring.course.service.CourseService;
+import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.model.Student;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +29,19 @@ public class CourseStartNotificationScheduler {
     private final CourseService courseService;
     private final EmailService emailService;
     private final Executor emailExecutor;
+    private final CourseMapper courseMapper;
+    private final StudentMapper studentMapper;
 
     public CourseStartNotificationScheduler(CourseService courseService,
                                             EmailService emailService,
-                                            @Qualifier("emailNotificationExecutor") Executor emailExecutor) {
+                                            @Qualifier("emailNotificationExecutor") Executor emailExecutor,
+                                            CourseMapper courseMapper,
+                                            StudentMapper studentMapper) {
         this.courseService = courseService;
         this.emailService = emailService;
         this.emailExecutor = emailExecutor;
+        this.courseMapper = courseMapper;
+        this.studentMapper = studentMapper;
     }
 
     /**
@@ -61,7 +69,7 @@ public class CourseStartNotificationScheduler {
                 continue;
             }
             for (Student student : course.getStudents()) {
-                emailExecutor.execute(() -> emailService.sendCourseStartingNotification(student, course));
+                emailExecutor.execute(() -> emailService.sendCourseStartingNotification(studentMapper.toDto(student), courseMapper.toDto(course)));
             }
         }
         log.info("Finished scheduling email notifications for courses starting on {}", tomorrow);

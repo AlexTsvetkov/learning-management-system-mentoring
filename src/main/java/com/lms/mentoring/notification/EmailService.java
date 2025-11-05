@@ -1,7 +1,9 @@
 package com.lms.mentoring.notification;
 
-import com.lms.mentoring.course.model.Course;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.course.dto.CourseDto;
+import com.lms.mentoring.student.dto.StudentDto;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +11,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -33,7 +33,7 @@ public class EmailService {
     /**
      * Sends an email to a student reminding them that their course starts tomorrow.
      */
-    public void sendCourseStartingNotification(Student student, Course course) {
+    public void sendCourseStartingNotification(StudentDto student, CourseDto course) {
         log.info("Sending course starting notification for student: {} and course: {}", student, course);
         String to = student.getEmail();
         String subject = String.format("Reminder: Course \"%s\" starts tomorrow", course.getTitle());
@@ -60,7 +60,7 @@ public class EmailService {
     /**
      * Builds a simple HTML email template for course start reminder.
      */
-    private String buildEmailTemplate(Student student, Course course) {
+    private String buildEmailTemplate(StudentDto student, CourseDto course) {
         String name = (student.getFirstName() != null && !student.getFirstName().isBlank())
                 ? student.getFirstName()
                 : student.getEmail();
