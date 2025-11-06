@@ -5,8 +5,7 @@ import com.lms.mentoring.course.dto.CourseSettingsDto;
 import com.lms.mentoring.course.model.Course;
 import com.lms.mentoring.course.model.CourseSettings;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,11 +13,18 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+
 class CourseMapperTest {
 
-    @Autowired
-    private CourseMapper mapper;
+    private final CourseMapper mapper = Mappers.getMapper(CourseMapper.class);
+    private final CourseSettingsMapper courseSettingsMapper = Mappers.getMapper(CourseSettingsMapper.class);
+
+    {
+        // Manually inject CourseSettingsMapper into CourseMapperImpl
+        if (mapper instanceof CourseMapperImpl courseImpl) {
+            courseImpl.setCourseSettingsMapper(courseSettingsMapper);
+        }
+    }
 
     @Test
     void shouldMapEntityToDto() {

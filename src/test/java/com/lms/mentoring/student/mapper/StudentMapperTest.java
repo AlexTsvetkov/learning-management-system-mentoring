@@ -1,12 +1,14 @@
 package com.lms.mentoring.student.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
+import com.lms.mentoring.course.mapper.CourseMapper;
+import com.lms.mentoring.course.mapper.CourseMapperImpl;
+import com.lms.mentoring.course.mapper.CourseSettingsMapper;
 import com.lms.mentoring.course.model.Course;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.model.Student;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mapstruct.factory.Mappers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,11 +17,23 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 class StudentMapperTest {
 
-    @Autowired
-    private StudentMapper mapper; // now Spring injects a fully initialized mapper
+    private final StudentMapper mapper = Mappers.getMapper(StudentMapper.class);
+    private final CourseMapper courseMapper = Mappers.getMapper(CourseMapper.class);
+    private final CourseSettingsMapper courseSettingsMapper = Mappers.getMapper(CourseSettingsMapper.class);
+
+    {
+        // Manually inject CourseMapper into StudentMapperImpl
+        if (mapper instanceof StudentMapperImpl impl) {
+            impl.setCourseMapper(courseMapper);
+        }
+        // Manually inject CourseSettingsMapper into CourseMapperImpl
+        if (courseMapper instanceof CourseMapperImpl courseImpl) {
+            courseImpl.setCourseSettingsMapper(courseSettingsMapper);
+        }
+    }
+
 
     @Test
     void shouldMapEntityToDto() {
