@@ -1,7 +1,6 @@
 package com.lms.mentoring.course.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
-import com.lms.mentoring.course.dto.CourseSettingsDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.entity.CourseSettings;
 import org.junit.jupiter.api.Test;
@@ -15,16 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 class CourseMapperTest {
-
     private final CourseMapper mapper = Mappers.getMapper(CourseMapper.class);
-    private final CourseSettingsMapper courseSettingsMapper = Mappers.getMapper(CourseSettingsMapper.class);
-
-    {
-        // Manually inject CourseSettingsMapper into CourseMapperImpl
-        if (mapper instanceof CourseMapperImpl courseImpl) {
-            courseImpl.setCourseSettingsMapper(courseSettingsMapper);
-        }
-    }
 
     @Test
     void shouldMapEntityToDto() {
@@ -52,20 +42,13 @@ class CourseMapperTest {
         assertThat(dto.getDescription()).contains("Java course");
         assertThat(dto.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(199.99));
         assertThat(dto.getCoinsPaid()).isEqualByComparingTo(BigDecimal.valueOf(50));
-
-        assertThat(dto.getSettings()).isNotNull();
-        assertThat(dto.getSettings().getId()).isEqualTo(settings.getId());
-        assertThat(dto.getSettings().getIsPublic()).isTrue();
+        assertThat(dto.getStartDate()).isEqualTo(settings.getStartDate());
+        assertThat(dto.getEndDate()).isEqualTo(settings.getEndDate());
+        assertThat(dto.getIsPublic()).isTrue();
     }
 
     @Test
     void shouldMapDtoToEntity() {
-        CourseSettingsDto settingsDto = CourseSettingsDto.builder()
-                .id(UUID.randomUUID())
-                .startDate(LocalDateTime.of(2025, 3, 1, 8, 0))
-                .endDate(LocalDateTime.of(2025, 8, 31, 17, 0))
-                .isPublic(false)
-                .build();
 
         CourseDto dto = CourseDto.builder()
                 .id(UUID.randomUUID())
@@ -73,7 +56,9 @@ class CourseMapperTest {
                 .description("Advanced Spring Boot course")
                 .price(BigDecimal.valueOf(299.50))
                 .coinsPaid(BigDecimal.valueOf(120))
-                .settings(settingsDto)
+                .startDate(LocalDateTime.of(2025, 3, 1, 8, 0))
+                .endDate(LocalDateTime.of(2025, 8, 31, 17, 0))
+                .isPublic(false)
                 .build();
 
         Course course = mapper.toEntity(dto);
@@ -86,7 +71,8 @@ class CourseMapperTest {
         assertThat(course.getCoinsPaid()).isEqualByComparingTo(BigDecimal.valueOf(120));
 
         assertThat(course.getSettings()).isNotNull();
-        assertThat(course.getSettings().getId()).isEqualTo(settingsDto.getId());
+        assertThat(course.getSettings().getStartDate()).isEqualTo(dto.getStartDate());
+        assertThat(course.getSettings().getEndDate()).isEqualTo(dto.getEndDate());
         assertThat(course.getSettings().getIsPublic()).isFalse();
     }
 }

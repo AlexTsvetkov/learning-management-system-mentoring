@@ -11,16 +11,19 @@ spring:
   #    password:
   #    driver-class-name: org.postgresql.Driver
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       # for db2
-      ddl-auto: none
+#      ddl-auto: none
+      ddl-auto: update
     #      for postgres
     #      ddl-auto: validate
     properties:
       hibernate:
         show_sql: true
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
+#  liquibase:
+#    enabled: true
+#    change-log: classpath:db/changelog/db.changelog-master.xml
   mail:
     host: sandbox.smtp.mailtrap.io
     port: 2525

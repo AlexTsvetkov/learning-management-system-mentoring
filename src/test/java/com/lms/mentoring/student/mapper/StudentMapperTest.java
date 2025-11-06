@@ -1,10 +1,8 @@
 package com.lms.mentoring.student.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
-import com.lms.mentoring.course.mapper.CourseMapper;
-import com.lms.mentoring.course.mapper.CourseMapperImpl;
-import com.lms.mentoring.course.mapper.CourseSettingsMapper;
 import com.lms.mentoring.course.entity.Course;
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
 import org.junit.jupiter.api.Test;
@@ -21,19 +19,13 @@ class StudentMapperTest {
 
     private final StudentMapper mapper = Mappers.getMapper(StudentMapper.class);
     private final CourseMapper courseMapper = Mappers.getMapper(CourseMapper.class);
-    private final CourseSettingsMapper courseSettingsMapper = Mappers.getMapper(CourseSettingsMapper.class);
 
     {
         // Manually inject CourseMapper into StudentMapperImpl
         if (mapper instanceof StudentMapperImpl impl) {
             impl.setCourseMapper(courseMapper);
         }
-        // Manually inject CourseSettingsMapper into CourseMapperImpl
-        if (courseMapper instanceof CourseMapperImpl courseImpl) {
-            courseImpl.setCourseSettingsMapper(courseSettingsMapper);
-        }
     }
-
 
     @Test
     void shouldMapEntityToDto() {

@@ -1,7 +1,8 @@
 package com.lms.mentoring.course.dto;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -36,6 +38,12 @@ public class CourseDto {
     @DecimalMin(value = "0.0", message = "Coins paid cannot be negative")
     private BigDecimal coinsPaid;
 
-    @Valid
-    private CourseSettingsDto settings;
+    @FutureOrPresent(message = "Start date cannot be in the past")
+    private LocalDateTime startDate;
+
+    @Future(message = "End date must be in the future")
+    private LocalDateTime endDate;
+
+    @NotNull(message = "isPublic flag must be specified")
+    private Boolean isPublic;
 }

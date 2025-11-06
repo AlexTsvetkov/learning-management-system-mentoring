@@ -65,8 +65,8 @@ public class EmailService {
                 ? student.getFirstName()
                 : student.getEmail();
 
-        String startDate = (course.getSettings() != null && course.getSettings().getStartDate() != null)
-                ? course.getSettings().getStartDate().toLocalDate().toString()
+        String startDate = (course.getStartDate() != null)
+                ? course.getStartDate().toLocalDate().toString()
                 : "tomorrow";
 
         return """
