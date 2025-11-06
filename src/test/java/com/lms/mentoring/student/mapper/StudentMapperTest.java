@@ -4,9 +4,9 @@ import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.mapper.CourseMapperImpl;
 import com.lms.mentoring.course.mapper.CourseSettingsMapper;
-import com.lms.mentoring.course.model.Course;
+import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.dto.StudentDto;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

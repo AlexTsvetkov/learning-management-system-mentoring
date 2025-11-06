@@ -1,6 +1,6 @@
 package com.lms.mentoring;
 
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import com.lms.mentoring.student.service.StudentService;
 import org.junit.jupiter.api.Test;

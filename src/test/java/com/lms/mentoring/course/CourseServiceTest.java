@@ -1,9 +1,9 @@
 package com.lms.mentoring.course;
 
-import com.lms.mentoring.course.model.Course;
+import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.repository.CourseRepository;
 import com.lms.mentoring.course.service.CourseService;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

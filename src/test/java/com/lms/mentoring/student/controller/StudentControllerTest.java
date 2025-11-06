@@ -2,7 +2,7 @@ package com.lms.mentoring.student.controller;
 
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.mapper.StudentMapper;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.service.StudentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

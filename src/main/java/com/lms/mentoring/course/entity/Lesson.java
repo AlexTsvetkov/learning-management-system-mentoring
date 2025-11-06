@@ -1,4 +1,4 @@
-package com.lms.mentoring.course.model;
+package com.lms.mentoring.course.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

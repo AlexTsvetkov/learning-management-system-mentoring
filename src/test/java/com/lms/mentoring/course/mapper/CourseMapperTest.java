@@ -2,8 +2,8 @@ package com.lms.mentoring.course.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.dto.CourseSettingsDto;
-import com.lms.mentoring.course.model.Course;
-import com.lms.mentoring.course.model.CourseSettings;
+import com.lms.mentoring.course.entity.Course;
+import com.lms.mentoring.course.entity.CourseSettings;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 

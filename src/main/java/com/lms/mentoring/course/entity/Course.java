@@ -1,7 +1,7 @@
-package com.lms.mentoring.course.model;
+package com.lms.mentoring.course.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;

@@ -1,6 +1,6 @@
-package com.lms.mentoring.student.model;
+package com.lms.mentoring.student.entity;
 
-import com.lms.mentoring.course.model.Course;
+import com.lms.mentoring.course.entity.Course;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

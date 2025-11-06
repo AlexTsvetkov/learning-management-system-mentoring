@@ -1,6 +1,6 @@
 package com.lms.mentoring.student.service;
 
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;

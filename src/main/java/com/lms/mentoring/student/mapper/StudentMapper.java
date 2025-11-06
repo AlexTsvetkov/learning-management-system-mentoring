@@ -2,7 +2,7 @@ package com.lms.mentoring.student.mapper;
 
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
-import com.lms.mentoring.student.model.Student;
+import com.lms.mentoring.student.entity.Student;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 

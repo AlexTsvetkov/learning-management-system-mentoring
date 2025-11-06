@@ -1,4 +1,4 @@
-package com.lms.mentoring.course.model;
+package com.lms.mentoring.course.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Entity;

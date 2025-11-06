@@ -3,7 +3,7 @@ package com.lms.mentoring.course;
 import com.lms.mentoring.course.controller.CourseController;
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.mapper.CourseMapper;
-import com.lms.mentoring.course.model.Course;
+import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

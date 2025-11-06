@@ -1,6 +1,6 @@
 package com.lms.mentoring.course.repository;
 
-import com.lms.mentoring.course.model.Course;
+import com.lms.mentoring.course.entity.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
