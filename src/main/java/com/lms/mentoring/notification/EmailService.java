@@ -2,7 +2,6 @@ package com.lms.mentoring.notification;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.student.dto.StudentDto;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

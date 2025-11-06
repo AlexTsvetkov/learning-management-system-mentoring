@@ -1,10 +1,10 @@
 package com.lms.mentoring.notification;
 
-import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.entity.Course;
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.service.CourseService;
-import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.entity.Student;
+import com.lms.mentoring.student.mapper.StudentMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
