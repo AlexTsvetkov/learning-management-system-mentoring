@@ -1,11 +1,9 @@
 package com.lms.mentoring.enrollment.service;
 
 import com.lms.mentoring.course.entity.Course;
-import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.repository.CourseRepository;
 import com.lms.mentoring.enrollment.dto.PurchaseResult;
 import com.lms.mentoring.student.entity.Student;
-import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +19,9 @@ public class CoursePurchaseService {
 
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
-    private final StudentMapper studentMapper;
-    private final CourseMapper courseMapper;
 
     @Transactional
-    public PurchaseResult purchaseCourse(UUID studentId, UUID courseId) {
+    public PurchaseResult<Student, Course> purchaseCourse(UUID studentId, UUID courseId) {
         // 1️⃣ Find entities
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new EntityNotFoundException("Student not found: " + studentId));
@@ -53,6 +49,6 @@ public class CoursePurchaseService {
         // 5️⃣ Save (JPA will handle the join table)
         studentRepository.save(student);
 
-        return new PurchaseResult(studentMapper.toDto(student), courseMapper.toDto(course));
+        return new PurchaseResult<>(student, course);
     }
 }
