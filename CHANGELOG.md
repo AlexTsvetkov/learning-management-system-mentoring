@@ -15,3 +15,11 @@
 - StudentMapper uses CourseMapper to map courses.
 - StudentService.findById annotated with @Transactional(readOnly = true) to allow lazy-loading before mapping.
 - Added unit tests for services and controllers (plain method unit tests).
+
+## [0.0.3] - 2025-11-20
+- Improved entity model and mapping for the recent refactor.
+- Added validation annotations to entity fields.
+- Updated DTOs and mappers to reflect entity changes and avoid lazy-loading issues.
+- Adjusted unit tests to cover the refactored behavior.
+- Minor database migration updates (Liquibase) if schema changed.
+
