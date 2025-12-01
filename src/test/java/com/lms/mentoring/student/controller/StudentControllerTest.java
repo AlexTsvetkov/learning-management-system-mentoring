@@ -99,7 +99,7 @@ class StudentControllerTest {
 
         ResponseEntity<StudentDto> response = controller.create(dto);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("Alice", response.getBody().getFirstName());
         assertNotNull(response.getBody().getId());
     }

@@ -44,7 +44,8 @@ public class StudentController {
     public ResponseEntity<StudentDto> create(@Valid @RequestBody StudentDto dto) {
         Student student = mapper.toEntity(dto);
         Student createdStudent = service.create(student);
-        return ResponseEntity.ok(mapper.toDto(createdStudent));
+        StudentDto body = mapper.toDto(createdStudent);
+        return ResponseEntity.created(java.net.URI.create("/api/students/" + body.getId())).body(body);
     }
 
     @PutMapping("/{id}")

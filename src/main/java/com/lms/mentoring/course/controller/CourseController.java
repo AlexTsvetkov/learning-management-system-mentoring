@@ -44,7 +44,8 @@ public class CourseController {
     public ResponseEntity<CourseDto> create(@Valid @RequestBody CourseDto dto) {
         Course c = mapper.toEntity(dto);
         Course created = service.create(c);
-        return ResponseEntity.ok(mapper.toDto(created));
+        CourseDto body = mapper.toDto(created);
+        return ResponseEntity.created(java.net.URI.create("/api/courses/" + body.getId())).body(body);
     }
 
     @PutMapping("/{id}")

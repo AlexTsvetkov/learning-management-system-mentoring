@@ -97,7 +97,7 @@ class CourseControllerTest {
 
         ResponseEntity<CourseDto> response = controller.create(dto);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals("Chemistry", response.getBody().getTitle());
         assertNotNull(response.getBody().getId());
     }
