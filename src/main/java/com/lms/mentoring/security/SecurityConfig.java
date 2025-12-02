@@ -1,10 +1,10 @@
 package com.lms.mentoring.security;
 
-import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -37,23 +37,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                // Disable CSRF for simpler API testing (common practice)
+                // 1. Crucial for API/Basic Auth: tell Spring not to create HTTP sessions
+                // This prevents redirection/session state issues that cause hangs.
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                // 2. Disable CSRF (good for API)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Configure authorization rules
+                // 3. Configure authorization rules (most specific first)
                 .authorizeHttpRequests(authorize -> authorize
-                        // 1. Actuator endpoints restricted to MANAGER role
-                        // Use EndpointRequest.toAnyEndpoint() for Actuator paths
-                        .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("MANAGER")
+                        // Actuator endpoints restricted to MANAGER role
+                        .requestMatchers("/actuator/**").hasRole("MANAGER")
 
-                        // 2. All main API endpoints secured for any authenticated user
+                        // All main API endpoints secured for any authenticated user
                         .requestMatchers("/api/**").authenticated()
 
-                        // 3. All other requests are permitted (e.g., static content, root path)
+                        // All other requests are permitted
                         .anyRequest().permitAll()
                 )
 
-                // Apply Basic Authentication for all secured paths
+                // 4. Apply Basic Authentication
                 .httpBasic(httpBasic -> httpBasic.init(http));
 
         return http.build();
