@@ -1,5 +1,7 @@
 package com.lms.mentoring.student.controller;
 
+import com.lms.mentoring.course.dto.CourseDto;
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.mapper.StudentMapper;
@@ -24,10 +26,12 @@ import java.util.stream.Collectors;
 public class StudentController {
     private final StudentService service;
     private final StudentMapper mapper;
+    private final CourseMapper courseMapper;
 
-    public StudentController(StudentService service, StudentMapper mapper) {
+    public StudentController(StudentService service, StudentMapper mapper, CourseMapper courseMapper) {
         this.service = service;
         this.mapper = mapper;
+        this.courseMapper = courseMapper;
     }
 
     @GetMapping
@@ -60,5 +64,12 @@ public class StudentController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/courses")
+    public List<CourseDto> getCourses(@PathVariable UUID id) {
+        return service.findCoursesByStudentId(id).stream()
+                .map(courseMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

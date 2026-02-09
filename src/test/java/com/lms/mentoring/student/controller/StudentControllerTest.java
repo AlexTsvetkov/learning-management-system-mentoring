@@ -1,5 +1,8 @@
 package com.lms.mentoring.student.controller;
 
+import com.lms.mentoring.course.dto.CourseDto;
+import com.lms.mentoring.course.entity.Course;
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.entity.Student;
@@ -10,12 +13,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -26,13 +31,15 @@ class StudentControllerTest {
 
     private StudentService service;
     private StudentMapper mapper;
+    private CourseMapper courseMapper;
     private StudentController controller;
 
     @BeforeEach
     void setUp() {
         service = mock(StudentService.class);
         mapper = mock(StudentMapper.class);
-        controller = new StudentController(service, mapper);
+        courseMapper = mock(CourseMapper.class);
+        controller = new StudentController(service, mapper, courseMapper);
     }
 
     @Test
@@ -133,5 +140,58 @@ class StudentControllerTest {
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(service, times(1)).delete(id);
+    }
+
+    @Test
+    void shouldReturnStudentCourses() {
+        UUID studentId = UUID.randomUUID();
+        UUID courseId = UUID.randomUUID();
+
+        Course course = Course.builder()
+                .id(courseId)
+                .title("Spring Boot Fundamentals")
+                .price(BigDecimal.valueOf(99.99))
+                .build();
+
+        CourseDto courseDto = CourseDto.builder()
+                .id(courseId)
+                .title("Spring Boot Fundamentals")
+                .price(BigDecimal.valueOf(99.99))
+                .build();
+
+        when(service.findCoursesByStudentId(studentId)).thenReturn(List.of(course));
+        when(courseMapper.toDto(course)).thenReturn(courseDto);
+
+        List<CourseDto> result = controller.getCourses(studentId);
+
+        assertEquals(1, result.size());
+        assertEquals("Spring Boot Fundamentals", result.getFirst().getTitle());
+        assertEquals(courseId, result.getFirst().getId());
+        verify(service, times(1)).findCoursesByStudentId(studentId);
+        verify(courseMapper, times(1)).toDto(course);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenStudentHasNoCourses() {
+        UUID studentId = UUID.randomUUID();
+
+        when(service.findCoursesByStudentId(studentId)).thenReturn(Collections.emptyList());
+
+        List<CourseDto> result = controller.getCourses(studentId);
+
+        assertTrue(result.isEmpty());
+        verify(service, times(1)).findCoursesByStudentId(studentId);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenStudentNotFound() {
+        UUID studentId = UUID.randomUUID();
+
+        when(service.findCoursesByStudentId(studentId)).thenReturn(Collections.emptyList());
+
+        List<CourseDto> result = controller.getCourses(studentId);
+
+        assertTrue(result.isEmpty());
+        verify(service, times(1)).findCoursesByStudentId(studentId);
     }
 }

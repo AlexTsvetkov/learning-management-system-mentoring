@@ -1,5 +1,6 @@
 package com.lms.mentoring.student.service;
 
+import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,5 +53,12 @@ public class StudentService {
         st.setCoins(balance.subtract(amount));
         repo.save(st);
         return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Course> findCoursesByStudentId(UUID studentId) {
+        return repo.findById(studentId)
+                .map(Student::getCourses)
+                .orElse(Collections.emptyList());
     }
 }

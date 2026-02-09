@@ -1,5 +1,6 @@
 package com.lms.mentoring.student;
 
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.controller.StudentController;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.mapper.StudentMapper;
@@ -21,6 +22,7 @@ public class StudentControllerUnitTest {
     void getReturnsStudentDtoWhenFound() {
         StudentService service = Mockito.mock(StudentService.class);
         StudentMapper mapper = Mockito.mock(StudentMapper.class);
+        CourseMapper courseMapper = Mockito.mock(CourseMapper.class);
 
         UUID id = UUID.randomUUID();
         Student s = Student.builder().id(id).firstName("John").build();
@@ -29,7 +31,7 @@ public class StudentControllerUnitTest {
         Mockito.when(service.findById(id)).thenReturn(Optional.of(s));
         Mockito.when(mapper.toDto(s)).thenReturn(dto);
 
-        StudentController controller = new StudentController(service, mapper);
+        StudentController controller = new StudentController(service, mapper, courseMapper);
         ResponseEntity<StudentDto> resp = controller.get(id);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -41,11 +43,12 @@ public class StudentControllerUnitTest {
     void getReturnsNotFoundWhenMissing() {
         StudentService service = Mockito.mock(StudentService.class);
         StudentMapper mapper = Mockito.mock(StudentMapper.class);
+        CourseMapper courseMapper = Mockito.mock(CourseMapper.class);
         UUID id = UUID.randomUUID();
 
         Mockito.when(service.findById(id)).thenReturn(Optional.empty());
 
-        StudentController controller = new StudentController(service, mapper);
+        StudentController controller = new StudentController(service, mapper, courseMapper);
         ResponseEntity<StudentDto> resp = controller.get(id);
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
