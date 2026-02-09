@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/students")
+@RequestMapping("/api/v1/students")
 public class StudentController {
     private final StudentService service;
     private final StudentMapper mapper;
@@ -45,7 +45,7 @@ public class StudentController {
         Student student = mapper.toEntity(dto);
         Student createdStudent = service.create(student);
         StudentDto body = mapper.toDto(createdStudent);
-        return ResponseEntity.created(java.net.URI.create("/api/students/" + body.getId())).body(body);
+        return ResponseEntity.created(java.net.URI.create("/api/v1/students/" + body.getId())).body(body);
     }
 
     @PutMapping("/{id}")
