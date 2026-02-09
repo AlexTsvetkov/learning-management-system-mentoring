@@ -1,4 +1,4 @@
-package com.lms.mentoring.security;
+package com.lms.mentoring.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,7 +58,7 @@ public class SecurityConfig {
                 )
 
                 // 4. Apply Basic Authentication
-                .httpBasic(httpBasic -> httpBasic.init(http));
+                .httpBasic(httpBasic -> {});
 
         return http.build();
     }
