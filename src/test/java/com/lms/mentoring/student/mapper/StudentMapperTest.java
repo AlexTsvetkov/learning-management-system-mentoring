@@ -5,14 +5,12 @@ import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
+import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,22 +30,8 @@ class StudentMapperTest {
     @Test
     void toDto_WhenStudentWithCourses_ShouldMapAllFieldsIncludingCourses() {
         // given
-        Course course = Course.builder()
-                .id(UUID.randomUUID())
-                .title("Java Masterclass")
-                .description("Java course")
-                .price(BigDecimal.valueOf(150))
-                .coinsPaid(BigDecimal.valueOf(50))
-                .build();
-        Student student = Student.builder()
-                .id(UUID.randomUUID())
-                .firstName("John")
-                .lastName("Doe")
-                .email("john.doe@example.com")
-                .dateOfBirth(LocalDate.of(2000, 1, 1))
-                .coins(BigDecimal.valueOf(100))
-                .courses(List.of(course))
-                .build();
+        Course course = TestDataGenerator.createDefaultCourse();
+        Student student = TestDataGenerator.createStudentWithCourses(List.of(course));
 
         // when
         StudentDto dto = mapper.toDto(student);
@@ -70,22 +54,8 @@ class StudentMapperTest {
     @Test
     void toEntity_WhenDtoWithCourses_ShouldMapAllFieldsIncludingCourses() {
         // given
-        CourseDto courseDto = CourseDto.builder()
-                .id(UUID.randomUUID())
-                .title("Spring Boot")
-                .description("Spring Boot course")
-                .price(BigDecimal.valueOf(200))
-                .coinsPaid(BigDecimal.valueOf(80))
-                .build();
-        StudentDto dto = StudentDto.builder()
-                .id(UUID.randomUUID())
-                .firstName("Jane")
-                .lastName("Smith")
-                .email("jane.smith@example.com")
-                .dateOfBirth(LocalDate.of(1995, 5, 20))
-                .coins(BigDecimal.valueOf(300))
-                .courses(List.of(courseDto))
-                .build();
+        CourseDto courseDto = TestDataGenerator.createDefaultCourseDto();
+        StudentDto dto = TestDataGenerator.createStudentDtoWithCourses(List.of(courseDto));
 
         // when
         Student student = mapper.toEntity(dto);

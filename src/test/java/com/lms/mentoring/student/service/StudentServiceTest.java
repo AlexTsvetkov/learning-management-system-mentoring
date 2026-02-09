@@ -3,15 +3,14 @@ package com.lms.mentoring.student.service;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
+import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +30,7 @@ class StudentServiceTest {
     @Test
     void create_WhenIdIsNull_ShouldAssignNewId() {
         // given
-        Student student = Student.builder().coins(BigDecimal.ZERO).build();
+        Student student = TestDataGenerator.createStudentWithoutId();
         when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // when
@@ -44,10 +43,7 @@ class StudentServiceTest {
     @Test
     void chargeCoins_WhenSufficientBalance_ShouldReduceBalanceAndReturnTrue() {
         // given
-        Student student = Student.builder()
-                .id(UUID.randomUUID())
-                .coins(BigDecimal.valueOf(100))
-                .build();
+        Student student = TestDataGenerator.createStudentWithCoins(BigDecimal.valueOf(100));
         when(repo.findById(student.getId())).thenReturn(Optional.of(student));
         when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -62,10 +58,7 @@ class StudentServiceTest {
     @Test
     void chargeCoins_WhenInsufficientBalance_ShouldReturnFalseAndNotChangeBalance() {
         // given
-        Student student = Student.builder()
-                .id(UUID.randomUUID())
-                .coins(BigDecimal.valueOf(20))
-                .build();
+        Student student = TestDataGenerator.createStudentWithCoins(BigDecimal.valueOf(20));
         when(repo.findById(student.getId())).thenReturn(Optional.of(student));
 
         // when
@@ -79,30 +72,14 @@ class StudentServiceTest {
     @Test
     void findCoursesByStudentId_WhenStudentExistsWithCourses_ShouldReturnCoursesList() {
         // given
-        UUID studentId = UUID.randomUUID();
-        Course course1 = Course.builder()
-                .id(UUID.randomUUID())
-                .title("Java Basics")
-                .price(BigDecimal.valueOf(99.99))
-                .build();
-        Course course2 = Course.builder()
-                .id(UUID.randomUUID())
-                .title("Spring Boot")
-                .price(BigDecimal.valueOf(149.99))
-                .build();
-        List<Course> courses = new ArrayList<>();
-        courses.add(course1);
-        courses.add(course2);
-        Student student = Student.builder()
-                .id(studentId)
-                .firstName("John")
-                .lastName("Doe")
-                .courses(courses)
-                .build();
-        when(repo.findById(studentId)).thenReturn(Optional.of(student));
+        Course course1 = TestDataGenerator.createDefaultCourse();
+        Course course2 = TestDataGenerator.createDefaultCourse();
+        course2.setTitle("Spring Boot");
+        Student student = TestDataGenerator.createStudentWithCourses(List.of(course1, course2));
+        when(repo.findById(student.getId())).thenReturn(Optional.of(student));
 
         // when
-        List<Course> result = service.findCoursesByStudentId(studentId);
+        List<Course> result = service.findCoursesByStudentId(student.getId());
 
         // then
         assertThat(result).hasSize(2);
@@ -112,11 +89,11 @@ class StudentServiceTest {
     @Test
     void findCoursesByStudentId_WhenStudentNotFound_ShouldReturnEmptyList() {
         // given
-        UUID studentId = UUID.randomUUID();
-        when(repo.findById(studentId)).thenReturn(Optional.empty());
+        Student student = TestDataGenerator.createDefaultStudent();
+        when(repo.findById(student.getId())).thenReturn(Optional.empty());
 
         // when
-        List<Course> result = service.findCoursesByStudentId(studentId);
+        List<Course> result = service.findCoursesByStudentId(student.getId());
 
         // then
         assertThat(result).isEmpty();
@@ -125,17 +102,11 @@ class StudentServiceTest {
     @Test
     void findCoursesByStudentId_WhenStudentHasNoCourses_ShouldReturnEmptyList() {
         // given
-        UUID studentId = UUID.randomUUID();
-        Student student = Student.builder()
-                .id(studentId)
-                .firstName("Jane")
-                .lastName("Doe")
-                .courses(new ArrayList<>())
-                .build();
-        when(repo.findById(studentId)).thenReturn(Optional.of(student));
+        Student student = TestDataGenerator.createDefaultStudent();
+        when(repo.findById(student.getId())).thenReturn(Optional.of(student));
 
         // when
-        List<Course> result = service.findCoursesByStudentId(studentId);
+        List<Course> result = service.findCoursesByStudentId(student.getId());
 
         // then
         assertThat(result).isEmpty();

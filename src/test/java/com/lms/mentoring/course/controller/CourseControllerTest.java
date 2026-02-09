@@ -4,15 +4,14 @@ import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.service.CourseService;
+import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,16 +37,10 @@ class CourseControllerTest {
     @Test
     void all_WhenCoursesExist_ShouldReturnCourseDtoList() {
         // given
-        Course course = Course.builder()
-                .id(UUID.randomUUID())
-                .title("Math 101")
-                .price(BigDecimal.valueOf(100))
-                .build();
-        CourseDto dto = CourseDto.builder()
-                .id(course.getId())
-                .title(course.getTitle())
-                .price(course.getPrice())
-                .build();
+        Course course = TestDataGenerator.createDefaultCourse();
+        CourseDto dto = TestDataGenerator.createDefaultCourseDto();
+        dto.setId(course.getId());
+        dto.setTitle(course.getTitle());
         when(service.findAll()).thenReturn(List.of(course));
         when(mapper.toDto(course)).thenReturn(dto);
 
@@ -56,7 +49,7 @@ class CourseControllerTest {
 
         // then
         assertEquals(1, result.size());
-        assertEquals("Math 101", result.getFirst().getTitle());
+        assertEquals(course.getTitle(), result.getFirst().getTitle());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(course);
     }
@@ -64,28 +57,28 @@ class CourseControllerTest {
     @Test
     void get_WhenCourseExists_ShouldReturnOkWithCourseDto() {
         // given
-        UUID id = UUID.randomUUID();
-        Course course = Course.builder().id(id).title("Physics").build();
-        CourseDto dto = CourseDto.builder().id(id).title("Physics").build();
-        when(service.findById(id)).thenReturn(Optional.of(course));
+        Course course = TestDataGenerator.createDefaultCourse();
+        CourseDto dto = TestDataGenerator.createDefaultCourseDto();
+        dto.setId(course.getId());
+        when(service.findById(course.getId())).thenReturn(Optional.of(course));
         when(mapper.toDto(course)).thenReturn(dto);
 
         // when
-        ResponseEntity<CourseDto> response = controller.get(id);
+        ResponseEntity<CourseDto> response = controller.get(course.getId());
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Physics", response.getBody().getTitle());
+        assertEquals(dto.getTitle(), response.getBody().getTitle());
     }
 
     @Test
     void get_WhenCourseNotFound_ShouldReturnNotFound() {
         // given
-        UUID id = UUID.randomUUID();
-        when(service.findById(id)).thenReturn(Optional.empty());
+        Course course = TestDataGenerator.createDefaultCourse();
+        when(service.findById(course.getId())).thenReturn(Optional.empty());
 
         // when
-        ResponseEntity<CourseDto> response = controller.get(id);
+        ResponseEntity<CourseDto> response = controller.get(course.getId());
 
         // then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -94,55 +87,60 @@ class CourseControllerTest {
     @Test
     void create_WhenValidDto_ShouldReturnCreatedWithCourseDto() {
         // given
-        CourseDto dto = CourseDto.builder().title("Chemistry").build();
-        Course course = Course.builder().title("Chemistry").build();
-        Course created = Course.builder().id(UUID.randomUUID()).title("Chemistry").build();
-        CourseDto createdDto = CourseDto.builder().id(created.getId()).title("Chemistry").build();
-        when(mapper.toEntity(dto)).thenReturn(course);
+        CourseDto inputDto = TestDataGenerator.createDefaultCourseDto();
+        inputDto.setId(null);
+        Course course = TestDataGenerator.createCourseWithoutId();
+        Course created = TestDataGenerator.createDefaultCourse();
+        CourseDto createdDto = TestDataGenerator.createDefaultCourseDto();
+        createdDto.setId(created.getId());
+        when(mapper.toEntity(inputDto)).thenReturn(course);
         when(service.create(course)).thenReturn(created);
         when(mapper.toDto(created)).thenReturn(createdDto);
 
         // when
-        ResponseEntity<CourseDto> response = controller.create(dto);
+        ResponseEntity<CourseDto> response = controller.create(inputDto);
 
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Chemistry", response.getBody().getTitle());
+        assertEquals(createdDto.getTitle(), response.getBody().getTitle());
         assertNotNull(response.getBody().getId());
     }
 
     @Test
     void update_WhenValidDto_ShouldReturnOkWithUpdatedCourseDto() {
         // given
-        UUID id = UUID.randomUUID();
-        CourseDto dto = CourseDto.builder().title("History").build();
-        Course course = Course.builder().id(id).title("History").build();
-        Course updated = Course.builder().id(id).title("World History").build();
-        CourseDto updatedDto = CourseDto.builder().id(id).title("World History").build();
-        when(mapper.toEntity(dto)).thenReturn(course);
+        Course course = TestDataGenerator.createDefaultCourse();
+        CourseDto inputDto = TestDataGenerator.createDefaultCourseDto();
+        Course updated = TestDataGenerator.createDefaultCourse();
+        updated.setId(course.getId());
+        updated.setTitle("Updated Title");
+        CourseDto updatedDto = TestDataGenerator.createDefaultCourseDto();
+        updatedDto.setId(course.getId());
+        updatedDto.setTitle("Updated Title");
+        when(mapper.toEntity(inputDto)).thenReturn(course);
         when(service.update(course)).thenReturn(updated);
         when(mapper.toDto(updated)).thenReturn(updatedDto);
 
         // when
-        ResponseEntity<CourseDto> response = controller.update(id, dto);
+        ResponseEntity<CourseDto> response = controller.update(course.getId(), inputDto);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("World History", response.getBody().getTitle());
-        assertEquals(id, response.getBody().getId());
+        assertEquals("Updated Title", response.getBody().getTitle());
+        assertEquals(course.getId(), response.getBody().getId());
     }
 
     @Test
     void delete_WhenCourseExists_ShouldReturnNoContent() {
         // given
-        UUID id = UUID.randomUUID();
-        doNothing().when(service).delete(id);
+        Course course = TestDataGenerator.createDefaultCourse();
+        doNothing().when(service).delete(course.getId());
 
         // when
-        ResponseEntity<Void> response = controller.delete(id);
+        ResponseEntity<Void> response = controller.delete(course.getId());
 
         // then
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(service, times(1)).delete(id);
+        verify(service, times(1)).delete(course.getId());
     }
 }

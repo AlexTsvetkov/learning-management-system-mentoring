@@ -2,13 +2,9 @@ package com.lms.mentoring.course.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
-import com.lms.mentoring.course.entity.CourseSettings;
+import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,20 +15,7 @@ class CourseMapperTest {
     @Test
     void toDto_WhenCourseWithSettings_ShouldMapAllFieldsCorrectly() {
         // given
-        CourseSettings settings = CourseSettings.builder()
-                .id(UUID.randomUUID())
-                .startDate(LocalDateTime.of(2025, 1, 10, 9, 0))
-                .endDate(LocalDateTime.of(2025, 6, 10, 17, 0))
-                .isPublic(true)
-                .build();
-        Course course = Course.builder()
-                .id(UUID.randomUUID())
-                .title("Java Masterclass")
-                .description("Comprehensive Java course covering core and advanced topics.")
-                .price(BigDecimal.valueOf(199.99))
-                .coinsPaid(BigDecimal.valueOf(50))
-                .settings(settings)
-                .build();
+        Course course = TestDataGenerator.createCourseWithSettings();
 
         // when
         CourseDto dto = mapper.toDto(course);
@@ -40,28 +23,19 @@ class CourseMapperTest {
         // then
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(course.getId());
-        assertThat(dto.getTitle()).isEqualTo("Java Masterclass");
-        assertThat(dto.getDescription()).contains("Java course");
-        assertThat(dto.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(199.99));
-        assertThat(dto.getCoinsPaid()).isEqualByComparingTo(BigDecimal.valueOf(50));
-        assertThat(dto.getStartDate()).isEqualTo(settings.getStartDate());
-        assertThat(dto.getEndDate()).isEqualTo(settings.getEndDate());
-        assertThat(dto.getIsPublic()).isTrue();
+        assertThat(dto.getTitle()).isEqualTo(course.getTitle());
+        assertThat(dto.getDescription()).isEqualTo(course.getDescription());
+        assertThat(dto.getPrice()).isEqualByComparingTo(course.getPrice());
+        assertThat(dto.getCoinsPaid()).isEqualByComparingTo(course.getCoinsPaid());
+        assertThat(dto.getStartDate()).isEqualTo(course.getSettings().getStartDate());
+        assertThat(dto.getEndDate()).isEqualTo(course.getSettings().getEndDate());
+        assertThat(dto.getIsPublic()).isEqualTo(course.getSettings().getIsPublic());
     }
 
     @Test
     void toEntity_WhenDtoWithAllFields_ShouldMapToEntityWithSettings() {
         // given
-        CourseDto dto = CourseDto.builder()
-                .id(UUID.randomUUID())
-                .title("Spring Boot Deep Dive")
-                .description("Advanced Spring Boot course")
-                .price(BigDecimal.valueOf(299.50))
-                .coinsPaid(BigDecimal.valueOf(120))
-                .startDate(LocalDateTime.of(2025, 3, 1, 8, 0))
-                .endDate(LocalDateTime.of(2025, 8, 31, 17, 0))
-                .isPublic(false)
-                .build();
+        CourseDto dto = TestDataGenerator.createCourseDtoWithSettings();
 
         // when
         Course course = mapper.toEntity(dto);
@@ -69,13 +43,13 @@ class CourseMapperTest {
         // then
         assertThat(course).isNotNull();
         assertThat(course.getId()).isEqualTo(dto.getId());
-        assertThat(course.getTitle()).isEqualTo("Spring Boot Deep Dive");
-        assertThat(course.getDescription()).isEqualTo("Advanced Spring Boot course");
-        assertThat(course.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(299.50));
-        assertThat(course.getCoinsPaid()).isEqualByComparingTo(BigDecimal.valueOf(120));
+        assertThat(course.getTitle()).isEqualTo(dto.getTitle());
+        assertThat(course.getDescription()).isEqualTo(dto.getDescription());
+        assertThat(course.getPrice()).isEqualByComparingTo(dto.getPrice());
+        assertThat(course.getCoinsPaid()).isEqualByComparingTo(dto.getCoinsPaid());
         assertThat(course.getSettings()).isNotNull();
         assertThat(course.getSettings().getStartDate()).isEqualTo(dto.getStartDate());
         assertThat(course.getSettings().getEndDate()).isEqualTo(dto.getEndDate());
-        assertThat(course.getSettings().getIsPublic()).isFalse();
+        assertThat(course.getSettings().getIsPublic()).isEqualTo(dto.getIsPublic());
     }
 }

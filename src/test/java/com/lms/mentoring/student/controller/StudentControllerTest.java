@@ -7,16 +7,15 @@ import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.service.StudentService;
+import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,18 +44,10 @@ class StudentControllerTest {
     @Test
     void all_WhenStudentsExist_ShouldReturnStudentDtoList() {
         // given
-        Student student = Student.builder()
-                .id(UUID.randomUUID())
-                .firstName("John")
-                .lastName("Doe")
-                .coins(BigDecimal.valueOf(100))
-                .build();
-        StudentDto dto = StudentDto.builder()
-                .id(student.getId())
-                .firstName(student.getFirstName())
-                .lastName(student.getLastName())
-                .coins(student.getCoins())
-                .build();
+        Student student = TestDataGenerator.createDefaultStudent();
+        StudentDto dto = TestDataGenerator.createDefaultStudentDto();
+        dto.setId(student.getId());
+        dto.setFirstName(student.getFirstName());
         when(service.findAll()).thenReturn(List.of(student));
         when(mapper.toDto(student)).thenReturn(dto);
 
@@ -65,7 +56,7 @@ class StudentControllerTest {
 
         // then
         assertEquals(1, result.size());
-        assertEquals("John", result.getFirst().getFirstName());
+        assertEquals(student.getFirstName(), result.getFirst().getFirstName());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(student);
     }
@@ -73,28 +64,28 @@ class StudentControllerTest {
     @Test
     void get_WhenStudentExists_ShouldReturnOkWithStudentDto() {
         // given
-        UUID id = UUID.randomUUID();
-        Student student = Student.builder().id(id).firstName("Jane").build();
-        StudentDto dto = StudentDto.builder().id(id).firstName("Jane").build();
-        when(service.findById(id)).thenReturn(Optional.of(student));
+        Student student = TestDataGenerator.createDefaultStudent();
+        StudentDto dto = TestDataGenerator.createDefaultStudentDto();
+        dto.setId(student.getId());
+        when(service.findById(student.getId())).thenReturn(Optional.of(student));
         when(mapper.toDto(student)).thenReturn(dto);
 
         // when
-        ResponseEntity<StudentDto> response = controller.get(id);
+        ResponseEntity<StudentDto> response = controller.get(student.getId());
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Jane", response.getBody().getFirstName());
+        assertEquals(dto.getFirstName(), response.getBody().getFirstName());
     }
 
     @Test
     void get_WhenStudentNotFound_ShouldReturnNotFound() {
         // given
-        UUID id = UUID.randomUUID();
-        when(service.findById(id)).thenReturn(Optional.empty());
+        Student student = TestDataGenerator.createDefaultStudent();
+        when(service.findById(student.getId())).thenReturn(Optional.empty());
 
         // when
-        ResponseEntity<StudentDto> response = controller.get(id);
+        ResponseEntity<StudentDto> response = controller.get(student.getId());
 
         // then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -103,98 +94,94 @@ class StudentControllerTest {
     @Test
     void create_WhenValidDto_ShouldReturnCreatedWithStudentDto() {
         // given
-        StudentDto dto = StudentDto.builder().firstName("Alice").build();
-        Student student = Student.builder().firstName("Alice").build();
-        Student created = Student.builder().id(UUID.randomUUID()).firstName("Alice").build();
-        StudentDto createdDto = StudentDto.builder().id(created.getId()).firstName("Alice").build();
-        when(mapper.toEntity(dto)).thenReturn(student);
+        StudentDto inputDto = TestDataGenerator.createDefaultStudentDto();
+        inputDto.setId(null);
+        Student student = TestDataGenerator.createStudentWithoutId();
+        Student created = TestDataGenerator.createDefaultStudent();
+        StudentDto createdDto = TestDataGenerator.createDefaultStudentDto();
+        createdDto.setId(created.getId());
+        when(mapper.toEntity(inputDto)).thenReturn(student);
         when(service.create(student)).thenReturn(created);
         when(mapper.toDto(created)).thenReturn(createdDto);
 
         // when
-        ResponseEntity<StudentDto> response = controller.create(dto);
+        ResponseEntity<StudentDto> response = controller.create(inputDto);
 
         // then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Alice", response.getBody().getFirstName());
+        assertEquals(createdDto.getFirstName(), response.getBody().getFirstName());
         assertNotNull(response.getBody().getId());
     }
 
     @Test
     void update_WhenValidDto_ShouldReturnOkWithUpdatedStudentDto() {
         // given
-        UUID id = UUID.randomUUID();
-        StudentDto dto = StudentDto.builder().firstName("Bob").build();
-        Student student = Student.builder().id(id).firstName("Bob").build();
-        Student updated = Student.builder().id(id).firstName("Bobby").build();
-        StudentDto updatedDto = StudentDto.builder().id(id).firstName("Bobby").build();
-        when(mapper.toEntity(dto)).thenReturn(student);
+        Student student = TestDataGenerator.createDefaultStudent();
+        StudentDto inputDto = TestDataGenerator.createDefaultStudentDto();
+        Student updated = TestDataGenerator.createDefaultStudent();
+        updated.setId(student.getId());
+        updated.setFirstName("UpdatedName");
+        StudentDto updatedDto = TestDataGenerator.createDefaultStudentDto();
+        updatedDto.setId(student.getId());
+        updatedDto.setFirstName("UpdatedName");
+        when(mapper.toEntity(inputDto)).thenReturn(student);
         when(service.update(student)).thenReturn(updated);
         when(mapper.toDto(updated)).thenReturn(updatedDto);
 
         // when
-        ResponseEntity<StudentDto> response = controller.update(id, dto);
+        ResponseEntity<StudentDto> response = controller.update(student.getId(), inputDto);
 
         // then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Bobby", response.getBody().getFirstName());
-        assertEquals(id, response.getBody().getId());
+        assertEquals("UpdatedName", response.getBody().getFirstName());
+        assertEquals(student.getId(), response.getBody().getId());
     }
 
     @Test
     void delete_WhenStudentExists_ShouldReturnNoContent() {
         // given
-        UUID id = UUID.randomUUID();
-        doNothing().when(service).delete(id);
+        Student student = TestDataGenerator.createDefaultStudent();
+        doNothing().when(service).delete(student.getId());
 
         // when
-        ResponseEntity<Void> response = controller.delete(id);
+        ResponseEntity<Void> response = controller.delete(student.getId());
 
         // then
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(service, times(1)).delete(id);
+        verify(service, times(1)).delete(student.getId());
     }
 
     @Test
     void getCourses_WhenStudentHasCourses_ShouldReturnCourseDtoList() {
         // given
-        UUID studentId = UUID.randomUUID();
-        UUID courseId = UUID.randomUUID();
-        Course course = Course.builder()
-                .id(courseId)
-                .title("Spring Boot Fundamentals")
-                .price(BigDecimal.valueOf(99.99))
-                .build();
-        CourseDto courseDto = CourseDto.builder()
-                .id(courseId)
-                .title("Spring Boot Fundamentals")
-                .price(BigDecimal.valueOf(99.99))
-                .build();
-        when(service.findCoursesByStudentId(studentId)).thenReturn(List.of(course));
+        Student student = TestDataGenerator.createDefaultStudent();
+        Course course = TestDataGenerator.createDefaultCourse();
+        CourseDto courseDto = TestDataGenerator.createDefaultCourseDto();
+        courseDto.setId(course.getId());
+        when(service.findCoursesByStudentId(student.getId())).thenReturn(List.of(course));
         when(courseMapper.toDto(course)).thenReturn(courseDto);
 
         // when
-        List<CourseDto> result = controller.getCourses(studentId);
+        List<CourseDto> result = controller.getCourses(student.getId());
 
         // then
         assertEquals(1, result.size());
-        assertEquals("Spring Boot Fundamentals", result.getFirst().getTitle());
-        assertEquals(courseId, result.getFirst().getId());
-        verify(service, times(1)).findCoursesByStudentId(studentId);
+        assertEquals(course.getTitle(), result.getFirst().getTitle());
+        verify(service, times(1)).findCoursesByStudentId(student.getId());
         verify(courseMapper, times(1)).toDto(course);
     }
 
     @Test
     void getCourses_WhenStudentHasNoCourses_ShouldReturnEmptyList() {
         // given
-        UUID studentId = UUID.randomUUID();
-        when(service.findCoursesByStudentId(studentId)).thenReturn(Collections.emptyList());
+        Student student = TestDataGenerator.createDefaultStudent();
+        when(service.findCoursesByStudentId(student.getId())).thenReturn(Collections.emptyList());
 
         // when
-        List<CourseDto> result = controller.getCourses(studentId);
+        List<CourseDto> result = controller.getCourses(student.getId());
 
         // then
         assertTrue(result.isEmpty());
-        verify(service, times(1)).findCoursesByStudentId(studentId);
+        verify(service, times(1)).findCoursesByStudentId(student.getId());
     }
 }

@@ -4,6 +4,7 @@ import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.repository.CourseRepository;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
+import com.lms.mentoring.util.TestDataGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,9 +12,7 @@ import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,16 +51,14 @@ class CourseServiceTest {
     @Test
     void enrollStudent_WhenCourseAndStudentExist_ShouldAddStudentToCourse() {
         // given
-        UUID courseId = UUID.randomUUID();
-        UUID studentId = UUID.randomUUID();
-        Course course = Course.builder().id(courseId).students(new HashSet<>()).build();
-        Student student = Student.builder().id(studentId).build();
-        when(repo.findById(courseId)).thenReturn(Optional.of(course));
-        when(studentRepo.findById(studentId)).thenReturn(Optional.of(student));
+        Course course = TestDataGenerator.createDefaultCourse();
+        Student student = TestDataGenerator.createDefaultStudent();
+        when(repo.findById(course.getId())).thenReturn(Optional.of(course));
+        when(studentRepo.findById(student.getId())).thenReturn(Optional.of(student));
         when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // when
-        service.enrollStudent(courseId, studentId);
+        service.enrollStudent(course.getId(), student.getId());
 
         // then
         assertThat(course.getStudents()).contains(student);
@@ -70,9 +67,8 @@ class CourseServiceTest {
     @Test
     void update_WhenCourseExists_ShouldSaveAndReturnCourse() {
         // given
-        UUID courseId = UUID.randomUUID();
-        Course course = Course.builder().id(courseId).build();
-        when(repo.existsById(courseId)).thenReturn(true);
+        Course course = TestDataGenerator.createDefaultCourse();
+        when(repo.existsById(course.getId())).thenReturn(true);
         when(repo.save(course)).thenReturn(course);
 
         // when
@@ -86,9 +82,8 @@ class CourseServiceTest {
     @Test
     void update_WhenCourseNotFound_ShouldThrowEntityNotFoundException() {
         // given
-        UUID courseId = UUID.randomUUID();
-        Course course = Course.builder().id(courseId).build();
-        when(repo.existsById(courseId)).thenReturn(false);
+        Course course = TestDataGenerator.createDefaultCourse();
+        when(repo.existsById(course.getId())).thenReturn(false);
 
         // when & then
         assertThrows(EntityNotFoundException.class, () -> service.update(course));
