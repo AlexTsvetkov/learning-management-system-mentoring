@@ -5,6 +5,7 @@ import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -20,7 +21,8 @@ class StudentMapperTest {
     private final StudentMapper mapper = Mappers.getMapper(StudentMapper.class);
     private final CourseMapper courseMapper = Mappers.getMapper(CourseMapper.class);
 
-    {
+    @BeforeEach
+    void setUp() {
         // Manually inject CourseMapper into StudentMapperImpl
         if (mapper instanceof StudentMapperImpl impl) {
             impl.setCourseMapper(courseMapper);
@@ -28,7 +30,8 @@ class StudentMapperTest {
     }
 
     @Test
-    void shouldMapEntityToDto() {
+    void toDto_WhenStudentWithCourses_ShouldMapAllFieldsIncludingCourses() {
+        // given
         Course course = Course.builder()
                 .id(UUID.randomUUID())
                 .title("Java Masterclass")
@@ -36,7 +39,6 @@ class StudentMapperTest {
                 .price(BigDecimal.valueOf(150))
                 .coinsPaid(BigDecimal.valueOf(50))
                 .build();
-
         Student student = Student.builder()
                 .id(UUID.randomUUID())
                 .firstName("John")
@@ -47,16 +49,16 @@ class StudentMapperTest {
                 .courses(List.of(course))
                 .build();
 
+        // when
         StudentDto dto = mapper.toDto(student);
 
+        // then
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(student.getId());
         assertThat(dto.getFirstName()).isEqualTo(student.getFirstName());
         assertThat(dto.getLastName()).isEqualTo(student.getLastName());
         assertThat(dto.getEmail()).isEqualTo(student.getEmail());
         assertThat(dto.getCoins()).isEqualByComparingTo(student.getCoins());
-
-        // Check nested mapping
         assertThat(dto.getCourses()).hasSize(1);
         CourseDto courseDto = dto.getCourses().getFirst();
         assertThat(courseDto.getTitle()).isEqualTo(course.getTitle());
@@ -66,7 +68,8 @@ class StudentMapperTest {
     }
 
     @Test
-    void shouldMapDtoToEntity() {
+    void toEntity_WhenDtoWithCourses_ShouldMapAllFieldsIncludingCourses() {
+        // given
         CourseDto courseDto = CourseDto.builder()
                 .id(UUID.randomUUID())
                 .title("Spring Boot")
@@ -74,7 +77,6 @@ class StudentMapperTest {
                 .price(BigDecimal.valueOf(200))
                 .coinsPaid(BigDecimal.valueOf(80))
                 .build();
-
         StudentDto dto = StudentDto.builder()
                 .id(UUID.randomUUID())
                 .firstName("Jane")
@@ -85,16 +87,16 @@ class StudentMapperTest {
                 .courses(List.of(courseDto))
                 .build();
 
+        // when
         Student student = mapper.toEntity(dto);
 
+        // then
         assertThat(student).isNotNull();
         assertThat(student.getId()).isEqualTo(dto.getId());
         assertThat(student.getFirstName()).isEqualTo(dto.getFirstName());
         assertThat(student.getLastName()).isEqualTo(dto.getLastName());
         assertThat(student.getEmail()).isEqualTo(dto.getEmail());
         assertThat(student.getCoins()).isEqualByComparingTo(dto.getCoins());
-
-        // Check nested mapping
         assertThat(student.getCourses()).hasSize(1);
         Course mappedCourse = student.getCourses().getFirst();
         assertThat(mappedCourse.getTitle()).isEqualTo(courseDto.getTitle());

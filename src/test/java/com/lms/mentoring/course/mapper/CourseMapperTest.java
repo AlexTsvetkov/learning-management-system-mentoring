@@ -12,19 +12,19 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 class CourseMapperTest {
+
     private final CourseMapper mapper = Mappers.getMapper(CourseMapper.class);
 
     @Test
-    void shouldMapEntityToDto() {
+    void toDto_WhenCourseWithSettings_ShouldMapAllFieldsCorrectly() {
+        // given
         CourseSettings settings = CourseSettings.builder()
                 .id(UUID.randomUUID())
                 .startDate(LocalDateTime.of(2025, 1, 10, 9, 0))
                 .endDate(LocalDateTime.of(2025, 6, 10, 17, 0))
                 .isPublic(true)
                 .build();
-
         Course course = Course.builder()
                 .id(UUID.randomUUID())
                 .title("Java Masterclass")
@@ -34,8 +34,10 @@ class CourseMapperTest {
                 .settings(settings)
                 .build();
 
+        // when
         CourseDto dto = mapper.toDto(course);
 
+        // then
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(course.getId());
         assertThat(dto.getTitle()).isEqualTo("Java Masterclass");
@@ -48,8 +50,8 @@ class CourseMapperTest {
     }
 
     @Test
-    void shouldMapDtoToEntity() {
-
+    void toEntity_WhenDtoWithAllFields_ShouldMapToEntityWithSettings() {
+        // given
         CourseDto dto = CourseDto.builder()
                 .id(UUID.randomUUID())
                 .title("Spring Boot Deep Dive")
@@ -61,15 +63,16 @@ class CourseMapperTest {
                 .isPublic(false)
                 .build();
 
+        // when
         Course course = mapper.toEntity(dto);
 
+        // then
         assertThat(course).isNotNull();
         assertThat(course.getId()).isEqualTo(dto.getId());
         assertThat(course.getTitle()).isEqualTo("Spring Boot Deep Dive");
         assertThat(course.getDescription()).isEqualTo("Advanced Spring Boot course");
         assertThat(course.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(299.50));
         assertThat(course.getCoinsPaid()).isEqualByComparingTo(BigDecimal.valueOf(120));
-
         assertThat(course.getSettings()).isNotNull();
         assertThat(course.getSettings().getStartDate()).isEqualTo(dto.getStartDate());
         assertThat(course.getSettings().getEndDate()).isEqualTo(dto.getEndDate());

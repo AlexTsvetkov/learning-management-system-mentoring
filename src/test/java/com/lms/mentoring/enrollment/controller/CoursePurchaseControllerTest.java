@@ -20,7 +20,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CoursePurchaseControllerTest {
@@ -39,7 +42,6 @@ class CoursePurchaseControllerTest {
 
     private UUID studentId;
     private UUID courseId;
-
     private Student student;
     private Course course;
     private StudentDto studentDto;
@@ -76,41 +78,35 @@ class CoursePurchaseControllerTest {
     }
 
     @Test
-    void purchaseCourse_ShouldReturnSuccessMessage() {
-        // Arrange
+    void purchaseCourse_WhenValidStudentAndCourse_ShouldReturnSuccessMessage() {
+        // given
         PurchaseResult<Student, Course> result = new PurchaseResult<>(student, course);
-
         when(purchaseService.purchaseCourse(studentId, courseId)).thenReturn(result);
         when(studentMapper.toDto(student)).thenReturn(studentDto);
         when(courseMapper.toDto(course)).thenReturn(courseDto);
 
-        // Act
+        // when
         ResponseEntity<String> response = controller.purchaseCourse(studentId, courseId);
 
-        // Assert
+        // then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody())
                 .isEqualTo("Course 'Java Basics' purchased successfully by student John Doe");
-
         verify(purchaseService).purchaseCourse(studentId, courseId);
         verify(studentMapper).toDto(student);
         verify(courseMapper).toDto(course);
     }
 
     @Test
-    void purchaseCourse_ShouldPropagateException_WhenServiceFails() {
-        // Arrange
+    void purchaseCourse_WhenServiceFails_ShouldPropagateException() {
+        // given
         when(purchaseService.purchaseCourse(studentId, courseId))
                 .thenThrow(new IllegalArgumentException("Insufficient coins"));
 
-        // Act & Assert
-        try {
-            controller.purchaseCourse(studentId, courseId);
-        } catch (Exception e) {
-            assertThat(e).isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Insufficient coins");
-        }
-
+        // when & then
+        assertThatThrownBy(() -> controller.purchaseCourse(studentId, courseId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Insufficient coins");
         verify(purchaseService).purchaseCourse(studentId, courseId);
         verifyNoInteractions(studentMapper, courseMapper);
     }

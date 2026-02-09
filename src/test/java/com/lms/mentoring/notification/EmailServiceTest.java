@@ -13,7 +13,10 @@ import java.util.Collections;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EmailServiceTest {
 
@@ -27,17 +30,16 @@ class EmailServiceTest {
     }
 
     @Test
-    void sendCourseStartingNotification_WhenValidStudentAndCourse_ShouldSendEmail() throws Exception {
+    void sendCourseStartingNotification_WhenValidStudentAndCourse_ShouldSendEmail() {
         // given
-        final var student = StudentDto.builder()
+        StudentDto student = StudentDto.builder()
                 .id(UUID.randomUUID())
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .courses(Collections.emptyList())
                 .build();
-
-        final var course = CourseDto.builder()
+        CourseDto course = CourseDto.builder()
                 .id(UUID.randomUUID())
                 .title("Java Basics")
                 .description("Learn Java from scratch")
@@ -47,8 +49,7 @@ class EmailServiceTest {
                 .endDate(LocalDateTime.of(2025, 12, 30, 18, 0))
                 .isPublic(true)
                 .build();
-
-        final var mimeMessage = mock(MimeMessage.class);
+        MimeMessage mimeMessage = mock(MimeMessage.class);
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
 
         // when
@@ -59,17 +60,16 @@ class EmailServiceTest {
     }
 
     @Test
-    void buildEmailTemplate_WhenFirstNameEmpty_ShouldUseEmail() throws Exception {
+    void buildEmailTemplate_WhenFirstNameEmpty_ShouldUseEmailAsGreeting() {
         // given
-        final var student = StudentDto.builder()
+        StudentDto student = StudentDto.builder()
                 .id(UUID.randomUUID())
                 .firstName("")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .courses(Collections.emptyList())
                 .build();
-
-        final var course = CourseDto.builder()
+        CourseDto course = CourseDto.builder()
                 .id(UUID.randomUUID())
                 .title("Java Basics")
                 .description("Learn Java from scratch")
@@ -81,7 +81,7 @@ class EmailServiceTest {
                 .build();
 
         // when
-        final var html = invokeBuildEmailTemplate(student, course);
+        String html = invokeBuildEmailTemplate(student, course);
 
         // then
         assertThat(html).contains("john.doe@example.com");
@@ -90,17 +90,16 @@ class EmailServiceTest {
     }
 
     @Test
-    void buildEmailTemplate_WhenStartDateNull_ShouldUseTomorrow() throws Exception {
+    void buildEmailTemplate_WhenStartDateNull_ShouldUseTomorrowInTemplate() {
         // given
-        final var student = StudentDto.builder()
+        StudentDto student = StudentDto.builder()
                 .id(UUID.randomUUID())
                 .firstName("John")
                 .lastName("Doe")
                 .email("john.doe@example.com")
                 .courses(Collections.emptyList())
                 .build();
-
-        final var course = CourseDto.builder()
+        CourseDto course = CourseDto.builder()
                 .id(UUID.randomUUID())
                 .title("Java Basics")
                 .description("Learn Java from scratch")
@@ -112,16 +111,15 @@ class EmailServiceTest {
                 .build();
 
         // when
-        final var html = invokeBuildEmailTemplate(student, course);
+        String html = invokeBuildEmailTemplate(student, course);
 
         // then
         assertThat(html).contains("tomorrow");
     }
 
-    // Helper to invoke private method
     private String invokeBuildEmailTemplate(StudentDto student, CourseDto course) {
         try {
-            final var method = EmailService.class.getDeclaredMethod("buildEmailTemplate", StudentDto.class, CourseDto.class);
+            var method = EmailService.class.getDeclaredMethod("buildEmailTemplate", StudentDto.class, CourseDto.class);
             method.setAccessible(true);
             return (String) method.invoke(emailService, student, course);
         } catch (Exception e) {

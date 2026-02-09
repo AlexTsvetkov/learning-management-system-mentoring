@@ -11,25 +11,34 @@ import com.lms.mentoring.student.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class CoursePurchaseServiceTest {
 
     @Mock
     private StudentRepository studentRepository;
+
     @Mock
     private CourseRepository courseRepository;
+
     @Mock
     private StudentMapper studentMapper;
+
     @Mock
     private CourseMapper courseMapper;
 
@@ -43,8 +52,6 @@ class CoursePurchaseServiceTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         studentId = UUID.randomUUID();
         courseId = UUID.randomUUID();
 
@@ -64,66 +71,69 @@ class CoursePurchaseServiceTest {
     }
 
     @Test
-    void shouldPurchaseCourseSuccessfully() {
+    void purchaseCourse_WhenValidStudentAndCourse_ShouldDeductCoinsAndEnroll() {
+        // given
         when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
-        when(studentMapper.toDto(any(Student.class))).thenReturn(new StudentDto());
-        when(courseMapper.toDto(any(Course.class))).thenReturn(null);
         when(studentRepository.save(any(Student.class))).thenReturn(student);
 
+        // when
         PurchaseResult result = service.purchaseCourse(studentId, courseId);
 
-        assertNotNull(result);
-        assertEquals(new BigDecimal("50"), student.getCoins());
-        assertTrue(student.getCourses().contains(course));
+        // then
+        assertThat(result).isNotNull();
+        assertThat(student.getCoins()).isEqualByComparingTo(new BigDecimal("50"));
+        assertThat(student.getCourses()).contains(course);
         verify(studentRepository).save(student);
     }
 
     @Test
-    void shouldThrowWhenStudentNotFound() {
+    void purchaseCourse_WhenStudentNotFound_ShouldThrowEntityNotFoundException() {
+        // given
         when(studentRepository.findById(studentId)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> service.purchaseCourse(studentId, courseId));
-
-        assertTrue(ex.getMessage().contains("Student not found"));
+        // when & then
+        assertThatThrownBy(() -> service.purchaseCourse(studentId, courseId))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Student not found");
     }
 
     @Test
-    void shouldThrowWhenCourseNotFound() {
+    void purchaseCourse_WhenCourseNotFound_ShouldThrowEntityNotFoundException() {
+        // given
         when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
 
-        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-                () -> service.purchaseCourse(studentId, courseId));
-
-        assertTrue(ex.getMessage().contains("Course not found"));
+        // when & then
+        assertThatThrownBy(() -> service.purchaseCourse(studentId, courseId))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Course not found");
     }
 
     @Test
-    void shouldThrowWhenAlreadyPurchased() {
+    void purchaseCourse_WhenAlreadyEnrolled_ShouldThrowIllegalStateException() {
+        // given
         student.getCourses().add(course);
-
         when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> service.purchaseCourse(studentId, courseId));
-
-        assertEquals("Student already enrolled in this course", ex.getMessage());
+        // when & then
+        assertThatThrownBy(() -> service.purchaseCourse(studentId, courseId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Student already enrolled in this course");
     }
 
     @Test
-    void shouldThrowWhenInsufficientCoins() {
+    void purchaseCourse_WhenInsufficientCoins_ShouldThrowIllegalArgumentException() {
+        // given
         student.setCoins(new BigDecimal("10"));
         course.setCoinsPaid(new BigDecimal("50"));
-
         when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> service.purchaseCourse(studentId, courseId));
-
-        assertTrue(ex.getMessage().contains("Insufficient coins"));
+        // when & then
+        assertThatThrownBy(() -> service.purchaseCourse(studentId, courseId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Insufficient coins");
     }
 }
