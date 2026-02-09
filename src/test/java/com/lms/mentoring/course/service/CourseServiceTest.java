@@ -1,10 +1,10 @@
-package com.lms.mentoring.course;
+package com.lms.mentoring.course.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.repository.CourseRepository;
-import com.lms.mentoring.course.service.CourseService;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -15,28 +15,35 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class CourseServiceTest {
+class CourseServiceTest {
+
+    private CourseRepository repo;
+    private StudentRepository studentRepo;
+    private CourseService service;
+
+    @BeforeEach
+    void setUp() {
+        repo = Mockito.mock(CourseRepository.class);
+        studentRepo = Mockito.mock(StudentRepository.class);
+        service = new CourseService(repo, studentRepo);
+    }
 
     @Test
     void findStartingBetweenDelegatesToRepo() {
-        CourseRepository repo = Mockito.mock(CourseRepository.class);
-        StudentRepository studentRepo = Mockito.mock(StudentRepository.class);
-        CourseService service = new CourseService(repo, studentRepo);
-
         LocalDateTime start = LocalDateTime.now().plusDays(1).withHour(0);
         LocalDateTime end = start.plusDays(1).minusSeconds(1);
         when(repo.findBySettings_StartDateBetween(start, end)).thenReturn(Collections.emptyList());
+
         assertThat(service.findStartingBetween(start, end)).isEmpty();
     }
 
     @Test
     void enrollStudentAddsStudentToCourse() {
-        CourseRepository repo = Mockito.mock(CourseRepository.class);
-        StudentRepository studentRepo = Mockito.mock(StudentRepository.class);
-        CourseService service = new CourseService(repo, studentRepo);
-
         UUID courseId = UUID.randomUUID();
         UUID studentId = UUID.randomUUID();
         Course c = Course.builder().id(courseId).students(new HashSet<>()).build();
@@ -53,10 +60,6 @@ public class CourseServiceTest {
 
     @Test
     void updateSavesAndReturnsCourseWhenExists() {
-        CourseRepository repo = Mockito.mock(CourseRepository.class);
-        StudentRepository studentRepo = Mockito.mock(StudentRepository.class);
-        CourseService service = new CourseService(repo, studentRepo);
-
         UUID courseId = UUID.randomUUID();
         Course c = Course.builder().id(courseId).build();
 
@@ -66,26 +69,21 @@ public class CourseServiceTest {
         Course result = service.update(c);
 
         assertThat(result).isEqualTo(c);
-        Mockito.verify(repo).save(c);
+        verify(repo).save(c);
     }
 
     @Test
     void updateThrowsWhenCourseNotFound() {
-        CourseRepository repo = Mockito.mock(CourseRepository.class);
-        StudentRepository studentRepo = Mockito.mock(StudentRepository.class);
-        CourseService service = new CourseService(repo, studentRepo);
-
         UUID courseId = UUID.randomUUID();
         Course c = Course.builder().id(courseId).build();
 
         when(repo.existsById(courseId)).thenReturn(false);
 
-        org.junit.jupiter.api.Assertions.assertThrows(
+        assertThrows(
                 jakarta.persistence.EntityNotFoundException.class,
                 () -> service.update(c)
         );
 
-        Mockito.verify(repo, Mockito.never()).save(Mockito.any());
+        verify(repo, never()).save(Mockito.any());
     }
-
 }

@@ -1,9 +1,9 @@
-package com.lms.mentoring;
+package com.lms.mentoring.student.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
-import com.lms.mentoring.student.service.StudentService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -16,22 +16,52 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class StudentServiceTest {
+class StudentServiceTest {
+
+    private StudentRepository repo;
+    private StudentService service;
+
+    @BeforeEach
+    void setUp() {
+        repo = Mockito.mock(StudentRepository.class);
+        service = new StudentService(repo);
+    }
+
+    @Test
+    void createAssignsIdIfMissing() {
+        when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
+
+        Student s = Student.builder().coins(BigDecimal.ZERO).build();
+        Student created = service.create(s);
+
+        assertThat(created.getId()).isNotNull();
+    }
+
     @Test
     void chargeCoinsReducesBalance() {
-        StudentRepository repo = Mockito.mock(StudentRepository.class);
-        Student s = Student.builder().id(UUID.randomUUID()).coins(java.math.BigDecimal.valueOf(100)).build();
+        Student s = Student.builder().id(UUID.randomUUID()).coins(BigDecimal.valueOf(100)).build();
         when(repo.findById(s.getId())).thenReturn(Optional.of(s));
         when(repo.save(Mockito.any())).thenAnswer(i -> i.getArgument(0));
-        StudentService service = new StudentService(repo);
-        boolean ok = service.chargeCoins(s.getId(), java.math.BigDecimal.valueOf(30));
+
+        boolean ok = service.chargeCoins(s.getId(), BigDecimal.valueOf(30));
+
         assertThat(ok).isTrue();
-        assertThat(s.getCoins()).isEqualByComparingTo(java.math.BigDecimal.valueOf(70));
+        assertThat(s.getCoins()).isEqualByComparingTo(BigDecimal.valueOf(70));
+    }
+
+    @Test
+    void chargeCoinsReturnsFalseWhenInsufficientBalance() {
+        Student s = Student.builder().id(UUID.randomUUID()).coins(BigDecimal.valueOf(20)).build();
+        when(repo.findById(s.getId())).thenReturn(Optional.of(s));
+
+        boolean ok = service.chargeCoins(s.getId(), BigDecimal.valueOf(30));
+
+        assertThat(ok).isFalse();
+        assertThat(s.getCoins()).isEqualByComparingTo(BigDecimal.valueOf(20));
     }
 
     @Test
     void findCoursesByStudentIdReturnsCoursesWhenStudentExists() {
-        StudentRepository repo = Mockito.mock(StudentRepository.class);
         UUID studentId = UUID.randomUUID();
 
         Course course1 = Course.builder()
@@ -59,7 +89,6 @@ public class StudentServiceTest {
 
         when(repo.findById(studentId)).thenReturn(Optional.of(student));
 
-        StudentService service = new StudentService(repo);
         List<Course> result = service.findCoursesByStudentId(studentId);
 
         assertThat(result).hasSize(2);
@@ -68,12 +97,9 @@ public class StudentServiceTest {
 
     @Test
     void findCoursesByStudentIdReturnsEmptyListWhenStudentNotFound() {
-        StudentRepository repo = Mockito.mock(StudentRepository.class);
         UUID studentId = UUID.randomUUID();
-
         when(repo.findById(studentId)).thenReturn(Optional.empty());
 
-        StudentService service = new StudentService(repo);
         List<Course> result = service.findCoursesByStudentId(studentId);
 
         assertThat(result).isEmpty();
@@ -81,7 +107,6 @@ public class StudentServiceTest {
 
     @Test
     void findCoursesByStudentIdReturnsEmptyListWhenStudentHasNoCourses() {
-        StudentRepository repo = Mockito.mock(StudentRepository.class);
         UUID studentId = UUID.randomUUID();
 
         Student student = Student.builder()
@@ -93,7 +118,6 @@ public class StudentServiceTest {
 
         when(repo.findById(studentId)).thenReturn(Optional.of(student));
 
-        StudentService service = new StudentService(repo);
         List<Course> result = service.findCoursesByStudentId(studentId);
 
         assertThat(result).isEmpty();
