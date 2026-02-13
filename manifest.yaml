@@ -11,6 +11,9 @@ applications:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
       SPRING_PROFILES_ACTIVE: cloud
       JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
+      # Remote Debug Configuration - Enable via 'cf set-env learning-management-system JBP_CONFIG_DEBUG "enabled: true"'
+      # Then restart app and use 'cf ssh -N -T -L 8000:localhost:8000 learning-management-system' to tunnel
+      # JBP_CONFIG_DEBUG: '{ enabled: true }'
     routes:
       - route: learning-management-system-1.cfapps.us10-001.hana.ondemand.com
     services:
@@ -19,6 +22,7 @@ applications:
       - lms-application-autoscaler
       - lms-destination
       - lms-feature-flags
+      - lms-smtp-credentials
     health-check-type: http
     health-check-http-endpoint: /actuator/health
     timeout: 180

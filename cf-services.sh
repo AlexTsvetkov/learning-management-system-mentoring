@@ -15,6 +15,7 @@ LOGGING_SERVICE_NAME="lms-application-logging"
 AUTOSCALER_SERVICE_NAME="lms-application-autoscaler"
 DESTINATION_SERVICE_NAME="lms-destination"
 FEATURE_FLAGS_SERVICE_NAME="lms-feature-flags"
+SMTP_USER_PROVIDED_SERVICE_NAME="lms-smtp-credentials"
 
 # Check if CF CLI is installed
 if ! command -v cf &> /dev/null; then
@@ -104,8 +105,29 @@ create_service_if_not_exists "destination" "lite" "$DESTINATION_SERVICE_NAME"
 
 # 5. Feature Flags Service
 echo ""
-echo "[5/5] Feature Flags Service"
+echo "[5/6] Feature Flags Service"
 create_service_if_not_exists "feature-flags" "lite" "$FEATURE_FLAGS_SERVICE_NAME"
+
+# 6. User-Provided Service for SMTP Credentials
+echo ""
+echo "[6/6] User-Provided SMTP Credentials Service"
+# SMTP credentials for Mailtrap (update with your actual credentials)
+SMTP_CREDENTIALS='{
+  "host": "sandbox.smtp.mailtrap.io",
+  "port": "2525",
+  "username": "your-mailtrap-username",
+  "password": "your-mailtrap-password",
+  "from": "no-reply@lms.example.com"
+}'
+
+if cf service "$SMTP_USER_PROVIDED_SERVICE_NAME" &> /dev/null; then
+    echo "✓ User-provided service '$SMTP_USER_PROVIDED_SERVICE_NAME' already exists"
+    echo "  To update credentials, run: cf update-user-provided-service $SMTP_USER_PROVIDED_SERVICE_NAME -p '<credentials-json>'"
+else
+    echo "Creating user-provided service '$SMTP_USER_PROVIDED_SERVICE_NAME'..."
+    cf create-user-provided-service "$SMTP_USER_PROVIDED_SERVICE_NAME" -p "$SMTP_CREDENTIALS"
+    echo "✓ User-provided service '$SMTP_USER_PROVIDED_SERVICE_NAME' created"
+fi
 
 echo ""
 echo "=============================================="

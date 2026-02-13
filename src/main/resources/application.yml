@@ -86,15 +86,34 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
 
 # SAP BTP Services Configuration
+# These values are populated from VCAP_SERVICES when bound to services
 sap:
   # Destination Service Configuration
   destination:
     service:
       name: lms-destination
+      # These are populated from VCAP_SERVICES binding
+      uri: ${vcap.services.lms-destination.credentials.uri:}
+      clientid: ${vcap.services.lms-destination.credentials.clientid:}
+      clientsecret: ${vcap.services.lms-destination.credentials.clientsecret:}
+      url: ${vcap.services.lms-destination.credentials.url:}
   # Feature Flags Service Configuration
   feature-flags:
     service:
       name: lms-feature-flags
+      # These are populated from VCAP_SERVICES binding
+      uri: ${vcap.services.lms-feature-flags.credentials.uri:}
+      clientid: ${vcap.services.lms-feature-flags.credentials.clientid:}
+      clientsecret: ${vcap.services.lms-feature-flags.credentials.clientsecret:}
+      url: ${vcap.services.lms-feature-flags.credentials.url:}
+  # SMTP Configuration
+  smtp:
+    # User-provided service name for SMTP credentials
+    user-provided-service:
+      name: lms-smtp-credentials
+    # Destination name for SMTP (when using Destination Service)
+    destination:
+      name: lms-smtp
 
 # Application Autoscaler Configuration (handled by CF service binding)
 # Logging Configuration (handled by CF service binding + logback-spring.xml)

@@ -672,6 +672,505 @@
 				}
 			],
 			"description": "Spring Boot Actuator endpoints for monitoring and management. Requires MANAGER role - use credentials: manager/secret"
+		},
+		{
+			"name": "SAP BTP - Destination Service",
+			"item": [
+				{
+					"name": "Get OAuth Token (Destination)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"destination_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{destination_clientid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{destination_clientsecret}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{destination_token_url}}/oauth/token",
+							"host": [
+								"{{destination_token_url}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Gets an OAuth2 access token for Destination Service API calls. The token is automatically saved to environment variable 'destination_access_token'.\n\nRequired environment variables:\n- destination_clientid: from VCAP_SERVICES\n- destination_clientsecret: from VCAP_SERVICES\n- destination_token_url: from VCAP_SERVICES (url field)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Destinations",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{destination_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{destination_uri}}/destination-configuration/v1/destinations",
+							"host": [
+								"{{destination_uri}}"
+							],
+							"path": [
+								"destination-configuration",
+								"v1",
+								"destinations"
+							]
+						},
+						"description": "Lists all destinations configured in the subaccount/service instance.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Destination by Name",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{destination_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{destination_uri}}/destination-configuration/v1/destinations/{{destination_name}}",
+							"host": [
+								"{{destination_uri}}"
+							],
+							"path": [
+								"destination-configuration",
+								"v1",
+								"destinations",
+								"{{destination_name}}"
+							]
+						},
+						"description": "Gets a specific destination configuration by name.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES\n- destination_name: name of the destination (e.g., 'lms-smtp')"
+					},
+					"response": []
+				},
+				{
+					"name": "Find Destination",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{destination_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{destination_uri}}/destination-configuration/v1/subaccountDestinations/{{destination_name}}",
+							"host": [
+								"{{destination_uri}}"
+							],
+							"path": [
+								"destination-configuration",
+								"v1",
+								"subaccountDestinations",
+								"{{destination_name}}"
+							]
+						},
+						"description": "Finds a destination at subaccount level.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES\n- destination_name: name of the destination"
+					},
+					"response": []
+				}
+			],
+			"description": "SAP BTP Destination Service API requests. Used to manage and retrieve destination configurations.\n\nTo use these requests:\n1. Get VCAP_SERVICES credentials from CF app: cf env learning-management-system\n2. Set environment variables from destination service binding:\n   - destination_clientid\n   - destination_clientsecret\n   - destination_token_url\n   - destination_uri\n3. First run 'Get OAuth Token' to obtain access_token\n4. Then use other requests with the token"
+		},
+		{
+			"name": "SAP BTP - Feature Flags Service",
+			"item": [
+				{
+					"name": "Get OAuth Token (Feature Flags)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"ff_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{ff_clientid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{ff_clientsecret}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ff_token_url}}/oauth/token",
+							"host": [
+								"{{ff_token_url}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Gets an OAuth2 access token for Feature Flags Service API calls. The token is automatically saved to environment variable 'ff_access_token'.\n\nRequired environment variables:\n- ff_clientid: from VCAP_SERVICES\n- ff_clientsecret: from VCAP_SERVICES\n- ff_token_url: from VCAP_SERVICES (url field)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Feature Flags",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags"
+							]
+						},
+						"description": "Lists all feature flags configured in the service instance.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Feature Flag by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags/{{flag_id}}",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags",
+								"{{flag_id}}"
+							]
+						},
+						"description": "Gets details of a specific feature flag.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag"
+					},
+					"response": []
+				},
+				{
+					"name": "Evaluate Feature Flag",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/evaluate/{{flag_id}}",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"evaluate",
+								"{{flag_id}}"
+							]
+						},
+						"description": "Evaluates a feature flag and returns its current value.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag (e.g., 'use-destination-smtp')"
+					},
+					"response": []
+				},
+				{
+					"name": "Evaluate use-destination-smtp Flag",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/evaluate/use-destination-smtp",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"evaluate",
+								"use-destination-smtp"
+							]
+						},
+						"description": "Evaluates the 'use-destination-smtp' feature flag.\n\nThis flag controls SMTP credential retrieval strategy:\n- false (disabled): Use User-Provided Service (VCAP)\n- true (enabled): Use Destination Service\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Feature Flag",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": false,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
+						},
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags"
+							]
+						},
+						"description": "Creates a new feature flag.\n\nThis example creates the 'use-destination-smtp' flag with:\n- Boolean type\n- Default value: false (use VCAP)\n- Direct delivery enabled\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Feature Flag (Enable)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": true,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
+						},
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags/use-destination-smtp",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags",
+								"use-destination-smtp"
+							]
+						},
+						"description": "Updates the 'use-destination-smtp' flag to ENABLED.\n\nWhen enabled (variation: true), the application will:\n- Retrieve SMTP credentials from SAP Destination Service\n- Use the 'lms-smtp' destination configuration\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Feature Flag (Disable)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": false,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
+						},
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags/use-destination-smtp",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags",
+								"use-destination-smtp"
+							]
+						},
+						"description": "Updates the 'use-destination-smtp' flag to DISABLED.\n\nWhen disabled (variation: false), the application will:\n- Retrieve SMTP credentials from User-Provided Service (VCAP_SERVICES)\n- Use the 'lms-smtp-credentials' user-provided service\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Feature Flag",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ff_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{ff_uri}}/api/v2/flags/{{flag_id}}",
+							"host": [
+								"{{ff_uri}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"flags",
+								"{{flag_id}}"
+							]
+						},
+						"description": "Deletes a feature flag.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag to delete"
+					},
+					"response": []
+				}
+			],
+			"description": "SAP BTP Feature Flags Service API requests. Used to manage feature flags for runtime configuration.\n\nTo use these requests:\n1. Get VCAP_SERVICES credentials from CF app: cf env learning-management-system\n2. Set environment variables from feature-flags service binding:\n   - ff_clientid\n   - ff_clientsecret\n   - ff_token_url\n   - ff_uri\n3. First run 'Get OAuth Token' to obtain access_token\n4. Then use other requests with the token\n\nKey feature flag for this application:\n- use-destination-smtp: Controls SMTP credential source"
 		}
 	]
 }

@@ -22,11 +22,12 @@ The application requires the following SAP BTP services:
 
 | Service | Plan | Instance Name | Description |
 |---------|------|---------------|-------------|
-| HANA DB | schema | lms-hana-db | SAP HANA Cloud database (schema level) |
+| HANA DB | hana-free | lms-hana-db | SAP HANA Cloud database |
 | Application Logging | lite | lms-application-logging | Centralized logging service |
 | Application Autoscaler | standard | lms-application-autoscaler | Auto-scaling based on metrics |
 | Destination | lite | lms-destination | External connectivity management |
 | Feature Flags | lite | lms-feature-flags | Feature toggle management |
+| User-Provided | - | lms-smtp-credentials | SMTP server credentials |
 
 ## Deployment Steps
 
@@ -55,8 +56,8 @@ chmod +x cf-services.sh
 Or create services manually:
 
 ```bash
-# 1. HANA DB (schema plan for trial)
-cf create-service hana schema lms-hana-db
+# 1. HANA DB (hana-free plan for trial)
+cf create-service hana-cloud hana-free lms-hana-db
 
 # 2. Application Logging Service
 cf create-service application-logs lite lms-application-logging
@@ -69,6 +70,15 @@ cf create-service destination lite lms-destination
 
 # 5. Feature Flags Service
 cf create-service feature-flags lite lms-feature-flags
+
+# 6. User-Provided SMTP Credentials Service
+cf create-user-provided-service lms-smtp-credentials -p '{
+  "host": "sandbox.smtp.mailtrap.io",
+  "port": "2525",
+  "username": "your-mailtrap-username",
+  "password": "your-mailtrap-password",
+  "from": "no-reply@lms.example.com"
+}'
 ```
 
 ### Step 3: Build the Application
@@ -90,7 +100,50 @@ cf push
 cf push -f manifest.yaml
 ```
 
-### Step 5: Configure Application Autoscaler (Optional)
+### Step 5: Configure SMTP Destination (Optional)
+
+If you want to use the Destination Service for SMTP credentials instead of User-Provided Service:
+
+1. **Create Destination in SAP BTP Cockpit:**
+   - Navigate to your Subaccount → Connectivity → Destinations
+   - Click "New Destination"
+   - Configure the destination:
+
+   | Property | Value |
+   |----------|-------|
+   | Name | `lms-smtp` |
+   | Type | `MAIL` |
+   | URL | `smtp://sandbox.smtp.mailtrap.io:2525` |
+   | User | Your SMTP username |
+   | Password | Your SMTP password |
+
+   - Add Additional Properties:
+     - `mail.smtp.host` = `sandbox.smtp.mailtrap.io`
+     - `mail.smtp.port` = `2525`
+     - `mail.from` = `no-reply@lms.example.com`
+
+2. **Create Feature Flag to enable Destination-based SMTP:**
+   - Use Postman collection "SAP BTP - Feature Flags Service" requests
+   - Or via API:
+   ```bash
+   # Get OAuth token first, then create the flag
+   curl -X POST "{{ff_uri}}/api/v2/flags" \
+     -H "Authorization: Bearer {{ff_access_token}}" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "id": "use-destination-smtp",
+       "description": "When enabled, SMTP credentials are retrieved from Destination Service",
+       "variation": false,
+       "variationType": "BOOLEAN",
+       "directDelivery": true
+     }'
+   ```
+
+3. **Toggle between SMTP sources:**
+   - **Feature flag DISABLED (default)**: Uses User-Provided Service (`lms-smtp-credentials`)
+   - **Feature flag ENABLED**: Uses Destination Service (`lms-smtp` destination)
+
+### Step 6: Configure Application Autoscaler (Optional)
 
 ```bash
 # Attach autoscaler policy
@@ -100,7 +153,7 @@ cf attach-autoscaling-policy learning-management-system autoscaler-config.json
 cf autoscaling-policy learning-management-system
 ```
 
-### Step 6: Verify Deployment
+### Step 7: Verify Deployment
 
 ```bash
 # Check application status
@@ -233,11 +286,121 @@ The application exposes the following actuator endpoints:
 | `/actuator/loggers` | Log level management |
 | `/actuator/metrics` | Application metrics |
 
+## Remote Debugging
+
+You can enable remote debugging for the application deployed on SAP BTP Cloud Foundry.
+
+### Enable Remote Debug
+
+1. **Set debug environment variable:**
+   ```bash
+   cf set-env learning-management-system JBP_CONFIG_DEBUG '{ enabled: true }'
+   cf restage learning-management-system
+   ```
+
+2. **Create SSH tunnel:**
+   ```bash
+   cf ssh -N -T -L 8000:localhost:8000 learning-management-system
+   ```
+
+3. **Configure IntelliJ IDEA:**
+   - Go to Run → Edit Configurations
+   - Add new "Remote JVM Debug" configuration
+   - Set Host: `localhost`, Port: `8000`
+   - Start debugging
+
+4. **Disable when done:**
+   ```bash
+   cf unset-env learning-management-system JBP_CONFIG_DEBUG
+   cf restage learning-management-system
+   ```
+
+## SMTP Configuration
+
+The application supports two methods for retrieving SMTP credentials:
+
+### Method 1: User-Provided Service (Default)
+
+Credentials are stored in a Cloud Foundry user-provided service:
+
+```bash
+# Create or update SMTP credentials
+cf create-user-provided-service lms-smtp-credentials -p '{
+  "host": "sandbox.smtp.mailtrap.io",
+  "port": "2525",
+  "username": "your-username",
+  "password": "your-password",
+  "from": "no-reply@lms.example.com"
+}'
+
+# Update existing credentials
+cf update-user-provided-service lms-smtp-credentials -p '{
+  "host": "new-smtp-host.com",
+  "port": "587",
+  "username": "new-username",
+  "password": "new-password",
+  "from": "sender@example.com"
+}'
+```
+
+### Method 2: Destination Service
+
+Credentials are managed via SAP BTP Destination Service:
+
+1. Create a destination named `lms-smtp` in SAP BTP Cockpit
+2. Enable the feature flag `use-destination-smtp`
+3. The application will automatically use Destination Service
+
+### Switching Between Methods
+
+Use the Feature Flags Service to switch at runtime:
+
+```bash
+# Get service credentials
+cf env learning-management-system | grep feature-flags
+
+# Use Postman collection or API to toggle the flag:
+# - variation: false → Use User-Provided Service
+# - variation: true → Use Destination Service
+```
+
 ## Security Considerations
 
 1. **VCAP_SERVICES**: Database credentials are automatically injected via Cloud Foundry service bindings
 2. **No hardcoded secrets**: All sensitive configuration comes from environment variables
 3. **HTTPS**: Cloud Foundry automatically provides HTTPS termination
+4. **SMTP Credentials**: Stored securely in User-Provided Service or Destination Service
+5. **Feature Flags**: Enable runtime configuration without code changes
+
+## Postman Collection
+
+The project includes a comprehensive Postman collection (`postman/LMS Mentoring API.postman_collection.json`) with:
+
+- **LMS API Requests**: Students, Courses, Enrollments, Actuator endpoints
+- **SAP BTP - Destination Service**: OAuth token, list/get destinations
+- **SAP BTP - Feature Flags Service**: OAuth token, CRUD operations for feature flags
+
+### Environment Files
+
+- `postman/local.postman_environment.json` - For local development (`http://localhost:8080`)
+- `postman/cloud.postman_environment.json` - For cloud deployment (includes SAP BTP service variables)
+
+### Getting VCAP_SERVICES Credentials
+
+To populate Postman environment variables:
+
+```bash
+# Get all environment variables
+cf env learning-management-system
+
+# Extract specific service credentials
+cf env learning-management-system | grep -A 50 '"destination"'
+cf env learning-management-system | grep -A 50 '"feature-flags"'
+```
+
+Copy the following values to your Postman cloud environment:
+- `destination_clientid`, `destination_clientsecret`, `destination_token_url`, `destination_uri`
+- `ff_clientid`, `ff_clientsecret`, `ff_token_url`, `ff_uri`
 
 ## Additional Resources
 
@@ -245,3 +408,5 @@ The application exposes the following actuator endpoints:
 - [Cloud Foundry Documentation](https://docs.cloudfoundry.org/)
 - [SAP HANA Cloud](https://help.sap.com/docs/hana-cloud)
 - [Application Autoscaler](https://help.sap.com/docs/Application_Autoscaler)
+- [Feature Flags Service](https://help.sap.com/docs/feature-flags-service)
+- [Destination Service](https://help.sap.com/docs/connectivity/sap-btp-connectivity-cf/consuming-destination-service)
