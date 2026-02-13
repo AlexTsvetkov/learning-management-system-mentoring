@@ -20,5 +20,5 @@ applications:
       - lms-destination
       - lms-feature-flags
     health-check-type: http
-    health-check-http-endpoint: /actuator/info
+    health-check-http-endpoint: /actuator/health
     timeout: 180
