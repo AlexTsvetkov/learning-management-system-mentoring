@@ -49,7 +49,7 @@ class CourseControllerTest {
 
         // then
         assertEquals(1, result.size());
-        assertEquals(course.getTitle(), result.getFirst().getTitle());
+        assertEquals(course.getTitle(), result.get(0).getTitle());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(course);
     }

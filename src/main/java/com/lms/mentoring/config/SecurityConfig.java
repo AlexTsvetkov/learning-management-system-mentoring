@@ -48,7 +48,7 @@ public class SecurityConfig {
                 // 3. Configure authorization rules (most specific first)
                 .authorizeHttpRequests(authorize -> authorize
                         // Actuator endpoints restricted to MANAGER role
-                        .requestMatchers("/actuator/**").hasRole("MANAGER")
+//                        .requestMatchers("/actuator/**").hasRole("MANAGER")
 
                         // All main API endpoints secured for any authenticated user
                         .requestMatchers("/api/**").authenticated()

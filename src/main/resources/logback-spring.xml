@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- Properties from Spring -->
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="learning-management-system"/>
+    <springProperty scope="context" name="appVersion" source="spring.application.version" defaultValue="0.1.0"/>
+
+    <!-- Common Properties -->
+    <property name="LOG_PATTERN_PLAIN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [${appName}] [${appVersion}] %-5level %logger{36} - %msg%n"/>
+
+    <!-- ========================================== -->
+    <!-- LOCAL PROFILE - Plain Text Format         -->
+    <!-- ========================================== -->
+    <springProfile name="default | dev | prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN_PLAIN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/lms-application.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>logs/lms-application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>10MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN_PLAIN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+
+        <logger name="com.lms.mentoring" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </logger>
+
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+    </springProfile>
+
+    <!-- ========================================== -->
+    <!-- CLOUD PROFILE - JSON Format for SAP BTP   -->
+    <!-- ========================================== -->
+    <springProfile name="cloud">
+        <!-- JSON Layout for SAP Application Logging Service -->
+        <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                    <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                        <prettyPrint>false</prettyPrint>
+                    </jsonFormatter>
+                    <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampFormat>
+                    <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
+                    <appendLineSeparator>true</appendLineSeparator>
+                    
+                    <!-- Include context properties -->
+                    <includeLevel>true</includeLevel>
+                    <includeThreadName>true</includeThreadName>
+                    <includeMDC>true</includeMDC>
+                    <includeLoggerName>true</includeLoggerName>
+                    <includeFormattedMessage>true</includeFormattedMessage>
+                    <includeMessage>true</includeMessage>
+                    <includeException>true</includeException>
+                    <includeContextName>false</includeContextName>
+                </layout>
+            </encoder>
+        </appender>
+
+        <!-- Custom JSON Appender with additional fields -->
+        <appender name="CONSOLE_SAP_JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+                    <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter">
+                        <prettyPrint>false</prettyPrint>
+                    </jsonFormatter>
+                    <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampFormat>
+                    <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
+                    <appendLineSeparator>true</appendLineSeparator>
+                </layout>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </root>
+
+        <logger name="com.lms.mentoring" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </logger>
+
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.hibernate" level="WARN"/>
+        <logger name="com.sap.cloud" level="WARN"/>
+        <logger name="com.sap.cloud.sdk" level="WARN"/>
+    </springProfile>
+
+</configuration>

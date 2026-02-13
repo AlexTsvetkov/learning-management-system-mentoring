@@ -44,7 +44,7 @@ class StudentMapperTest {
         assertThat(dto.getEmail()).isEqualTo(student.getEmail());
         assertThat(dto.getCoins()).isEqualByComparingTo(student.getCoins());
         assertThat(dto.getCourses()).hasSize(1);
-        CourseDto courseDto = dto.getCourses().getFirst();
+        CourseDto courseDto = dto.getCourses().get(0);
         assertThat(courseDto.getTitle()).isEqualTo(course.getTitle());
         assertThat(courseDto.getDescription()).isEqualTo(course.getDescription());
         assertThat(courseDto.getPrice()).isEqualByComparingTo(course.getPrice());
@@ -68,7 +68,7 @@ class StudentMapperTest {
         assertThat(student.getEmail()).isEqualTo(dto.getEmail());
         assertThat(student.getCoins()).isEqualByComparingTo(dto.getCoins());
         assertThat(student.getCourses()).hasSize(1);
-        Course mappedCourse = student.getCourses().getFirst();
+        Course mappedCourse = student.getCourses().get(0);
         assertThat(mappedCourse.getTitle()).isEqualTo(courseDto.getTitle());
         assertThat(mappedCourse.getDescription()).isEqualTo(courseDto.getDescription());
         assertThat(mappedCourse.getPrice()).isEqualByComparingTo(courseDto.getPrice());

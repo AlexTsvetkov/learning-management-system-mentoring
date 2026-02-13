@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: learning-management-system
+    version: 0.1.0
   datasource:
     # for db2
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -11,7 +14,6 @@ spring:
   #    password:
   #    driver-class-name: org.postgresql.Driver
   jpa:
-#    defer-datasource-initialization: false
     hibernate:
       # for db2
       ddl-auto: none
@@ -39,9 +41,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,loggers
+        include: health,info,loggers,metrics
 
 spring.jpa.open-in-view: false
+
 server:
   port: 8080
 
@@ -51,3 +54,122 @@ app:
     max-pool-size: 20
     queue-capacity: 50
     thread-name-prefix: "email-executor-"
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{app.name:-${spring.application.name}}] [%X{app.version:-${spring.application.version}}] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.lms.mentoring: DEBUG
+
+---
+# Cloud Profile - SAP BTP Cloud Foundry
+spring:
+  config:
+    activate:
+      on-profile: cloud
+  # Datasource is auto-configured by java-cfenv from VCAP_SERVICES
+  # java-cfenv automatically detects hana-cloud service and configures:
+  # - spring.datasource.url
+  # - spring.datasource.username  
+  # - spring.datasource.password
+  # - spring.datasource.driver-class-name
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.HANAColumnStoreDialect
+        show_sql: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+# SAP BTP Services Configuration
+sap:
+  # Destination Service Configuration
+  destination:
+    service:
+      name: lms-destination
+  # Feature Flags Service Configuration
+  feature-flags:
+    service:
+      name: lms-feature-flags
+
+# Application Autoscaler Configuration (handled by CF service binding)
+# Logging Configuration (handled by CF service binding + logback-spring.xml)
+
+logging:
+  level:
+    root: INFO
+    com.lms.mentoring: INFO
+    com.sap.cloud: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,loggers,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+
+---
+# Dev Profile - Local Development with H2
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        show_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    root: INFO
+    com.lms.mentoring: DEBUG
+
+---
+# Prod Profile - PostgreSQL
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lms_db
+    username: lms_user
+    password:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        show_sql: false
+
+logging:
+  level:
+    root: INFO
+    com.lms.mentoring: INFO

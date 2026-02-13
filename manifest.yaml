@@ -1,0 +1,24 @@
+---
+applications:
+  - name: learning-management-system
+    memory: 1024M
+    disk_quota: 512M
+    instances: 1
+    buildpacks:
+      - sap_java_buildpack_jakarta
+    path: target/learning-management-system-0.1.0.jar
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+      SPRING_PROFILES_ACTIVE: cloud
+      JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
+    routes:
+      - route: learning-management-system-1.cfapps.us10-001.hana.ondemand.com
+    services:
+      - lms-hana-db
+      - lms-application-logging
+      - lms-application-autoscaler
+      - lms-destination
+      - lms-feature-flags
+    health-check-type: http
+    health-check-http-endpoint: /actuator/info
+    timeout: 180

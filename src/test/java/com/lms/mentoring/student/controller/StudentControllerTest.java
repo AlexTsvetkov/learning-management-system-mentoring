@@ -56,7 +56,7 @@ class StudentControllerTest {
 
         // then
         assertEquals(1, result.size());
-        assertEquals(student.getFirstName(), result.getFirst().getFirstName());
+        assertEquals(student.getFirstName(), result.get(0).getFirstName());
         verify(service, times(1)).findAll();
         verify(mapper, times(1)).toDto(student);
     }
@@ -166,7 +166,7 @@ class StudentControllerTest {
 
         // then
         assertEquals(1, result.size());
-        assertEquals(course.getTitle(), result.getFirst().getTitle());
+        assertEquals(course.getTitle(), result.get(0).getTitle());
         verify(service, times(1)).findCoursesByStudentId(student.getId());
         verify(courseMapper, times(1)).toDto(course);
     }
