@@ -54,3 +54,5 @@ spring.log
 surefire-reports/
 failsafe-reports/
 test-output/
+
+cf-commands.md
