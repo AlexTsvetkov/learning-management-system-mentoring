@@ -16,6 +16,7 @@ DESTINATION_SERVICE_NAME="lms-destination"
 FEATURE_FLAGS_SERVICE_NAME="lms-feature-flags"
 FEATURE_FLAGS_KEY_NAME="lms-feature-flags-key"
 SMTP_USER_PROVIDED_SERVICE_NAME="lms-smtp-credentials"
+XSUAA_SERVICE_NAME="lms-xsuaa"
 
 # Function to extract JSON from cf service-key output
 extract_service_key_json() {
@@ -189,34 +190,52 @@ echo "Creating SAP BTP Services..."
 echo ""
 
 # 1. SAP HANA Cloud Database (schema plan for trial)
-echo "[1/6] HANA DB Service"
+echo "[1/7] HANA DB Service"
 # Note: For trial accounts, use 'hana' service with 'schema' plan
 # For productive accounts, use 'hana-cloud' service with appropriate plan
 create_service_if_not_exists "hana-cloud" "hana-free" "$HANA_SERVICE_NAME"
 
 # 2. Application Logging Service
 echo ""
-echo "[2/6] Application Logging Service"
+echo "[2/7] Application Logging Service"
 create_service_if_not_exists "application-logs" "lite" "$LOGGING_SERVICE_NAME"
 
 # 3. Application Autoscaler
 echo ""
-echo "[3/6] Application Autoscaler Service"
+echo "[3/7] Application Autoscaler Service"
 create_service_if_not_exists "autoscaler" "standard" "$AUTOSCALER_SERVICE_NAME"
 
 # 4. Destination Service
 echo ""
-echo "[4/6] Destination Service"
+echo "[4/7] Destination Service"
 create_service_if_not_exists "destination" "lite" "$DESTINATION_SERVICE_NAME"
 
 # 5. Feature Flags Service
 echo ""
-echo "[5/6] Feature Flags Service"
+echo "[5/7] Feature Flags Service"
 create_service_if_not_exists "feature-flags" "lite" "$FEATURE_FLAGS_SERVICE_NAME"
 
-# 6. User-Provided Service for SMTP Credentials
+# 6. XSUAA Service (OAuth2 Authentication)
 echo ""
-echo "[6/6] User-Provided SMTP Credentials Service"
+echo "[6/7] XSUAA Service (OAuth2)"
+# Create XSUAA service using xs-security.json configuration
+if cf service "$XSUAA_SERVICE_NAME" &> /dev/null; then
+    echo "✓ Service '$XSUAA_SERVICE_NAME' already exists"
+else
+    echo "Creating service '$XSUAA_SERVICE_NAME' (xsuaa - application)..."
+    if [ -f "xs-security.json" ]; then
+        cf create-service xsuaa application "$XSUAA_SERVICE_NAME" -c xs-security.json
+        echo "✓ Service '$XSUAA_SERVICE_NAME' created"
+    else
+        echo "⚠ xs-security.json not found. Creating XSUAA with default config..."
+        cf create-service xsuaa application "$XSUAA_SERVICE_NAME"
+        echo "✓ Service '$XSUAA_SERVICE_NAME' created (default config)"
+    fi
+fi
+
+# 7. User-Provided Service for SMTP Credentials
+echo ""
+echo "[7/7] User-Provided SMTP Credentials Service"
 # SMTP credentials for Mailtrap
 SMTP_CREDENTIALS='{
   "host": "sandbox.smtp.mailtrap.io",
@@ -251,3 +270,8 @@ echo "2. Deploy to CF: cf push"
 echo "3. Check application status: cf apps"
 echo "4. View logs: cf logs learning-management-system --recent"
 echo "5. Check feature flag: ./cf-services.sh --get-flag use-destination-smtp"
+echo ""
+echo "IMPORTANT: To access the API, you need to:"
+echo "  1. Assign the 'LMS_User' role collection to your user in SAP BTP Cockpit"
+echo "  2. Go to: Security → Trust Configuration → Your IDP → Assign Role Collection"
+echo "  3. Get an OAuth2 token from XSUAA to make authenticated API requests"

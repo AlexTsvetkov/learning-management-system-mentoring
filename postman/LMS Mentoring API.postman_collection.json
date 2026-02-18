@@ -2,12 +2,106 @@
 	"info": {
 		"_postman_id": "ccc225a2-d682-4627-9f77-5d44f27c99a1",
 		"name": "LMS Mentoring API",
-		"description": "Postman collection for Learning Management System (Mentoring Project)",
+		"description": "Postman collection for Learning Management System (Mentoring Project)\n\n## Authentication\n\n### Local Development\n- Use Basic Auth with credentials: user/password or manager/secret\n\n### Cloud (SAP BTP)\n- Use OAuth2 Bearer Token from XSUAA\n- First run 'Get XSUAA Token' request to obtain access token\n- All API requests will automatically use the token",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "6593295",
 		"_collection_link": "https://interstellar-star-3717.postman.co/workspace/LMS-Mentoring~12b651dc-1296-4e99-b81d-a41d8e64b088/collection/6593295-ccc225a2-d682-4627-9f77-5d44f27c99a1?action=share&source=collection_link&creator=6593295"
 	},
 	"item": [
+		{
+			"name": "Authentication (Cloud)",
+			"item": [
+				{
+					"name": "Get XSUAA Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.environment.set(\"xsuaa_access_token\", jsonData.access_token);",
+									"    console.log(\"Access token saved to xsuaa_access_token\");",
+									"    console.log(\"Token expires in: \" + jsonData.expires_in + \" seconds\");",
+									"} else {",
+									"    console.error(\"No access_token in response\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{xsuaa_clientid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{xsuaa_clientsecret}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{xsuaa_url}}/oauth/token",
+							"host": [
+								"{{xsuaa_url}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Gets an OAuth2 access token from XSUAA for API authentication.\n\n**The token is automatically saved to `xsuaa_access_token` environment variable.**\n\n## Setup\n\n1. Get XSUAA credentials from your app:\n   ```\n   cf env learning-management-system | grep -A 50 'lms-xsuaa'\n   ```\n\n2. Set these environment variables:\n   - `xsuaa_clientid`: clientid from credentials\n   - `xsuaa_clientsecret`: clientsecret from credentials\n   - `xsuaa_url`: url from credentials (e.g., https://xxx.authentication.us10.hana.ondemand.com)\n\n3. Run this request to get a token\n\n4. All other API requests will use the token automatically"
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token (Decode JWT)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://jwt.io/#debugger-io?token={{xsuaa_access_token}}",
+							"protocol": "https",
+							"host": [
+								"jwt",
+								"io"
+							],
+							"hash": "debugger-io?token={{xsuaa_access_token}}"
+						},
+						"description": "Open jwt.io to decode and verify your XSUAA token.\n\nNote: This just opens the URL - you can paste your token at jwt.io to see its contents."
+					},
+					"response": []
+				}
+			],
+			"description": "XSUAA OAuth2 authentication for SAP BTP Cloud Foundry.\n\n## How to use:\n\n1. Set environment variables from XSUAA service binding:\n   - xsuaa_clientid\n   - xsuaa_clientsecret\n   - xsuaa_url\n\n2. Run 'Get XSUAA Token' request\n\n3. The token is automatically saved and used by all API requests"
+		},
 		{
 			"name": "Students",
 			"item": [
@@ -15,16 +109,11 @@
 					"name": "Get All Students",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -41,7 +130,8 @@
 								"v1",
 								"students"
 							]
-						}
+						},
+						"description": "Returns all students.\n\n**Cloud:** Uses Bearer token from XSUAA\n**Local:** Change auth to Basic (user/password)"
 					},
 					"response": []
 				},
@@ -49,16 +139,11 @@
 					"name": "Get Student by ID",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -84,16 +169,11 @@
 					"name": "Create Student",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -127,16 +207,11 @@
 					"name": "Update Student",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -171,16 +246,11 @@
 					"name": "Delete Student",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -206,16 +276,11 @@
 					"name": "Get Student Courses",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -247,16 +312,11 @@
 					"name": "Get All Courses",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -281,16 +341,11 @@
 					"name": "Get Course by ID",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -316,16 +371,11 @@
 					"name": "Create Course",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -359,16 +409,11 @@
 					"name": "Update Course",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -403,16 +448,11 @@
 					"name": "Delete Course",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -443,16 +483,11 @@
 					"name": "Purchase Course",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "user",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "password",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -493,19 +528,7 @@
 					"name": "Health Check",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "manager",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "secret",
-									"type": "string"
-								}
-							]
+							"type": "noauth"
 						},
 						"method": "GET",
 						"header": [],
@@ -519,7 +542,7 @@
 								"health"
 							]
 						},
-						"description": "Returns the health status of the application. Shows UP when the application is running correctly. Requires MANAGER role (manager/secret)."
+						"description": "Returns the health status of the application. Public endpoint - no authentication required."
 					},
 					"response": []
 				},
@@ -527,19 +550,7 @@
 					"name": "Application Info",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "manager",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "secret",
-									"type": "string"
-								}
-							]
+							"type": "noauth"
 						},
 						"method": "GET",
 						"header": [],
@@ -553,7 +564,7 @@
 								"info"
 							]
 						},
-						"description": "Returns general information about the application. Requires MANAGER role (manager/secret)."
+						"description": "Returns general information about the application. Public endpoint - no authentication required."
 					},
 					"response": []
 				},
@@ -561,16 +572,11 @@
 					"name": "Get All Loggers",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "manager",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "secret",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -587,7 +593,7 @@
 								"loggers"
 							]
 						},
-						"description": "Returns all configured loggers and their log levels. Requires MANAGER role (manager/secret)."
+						"description": "Returns all configured loggers and their log levels. Requires authentication."
 					},
 					"response": []
 				},
@@ -595,16 +601,11 @@
 					"name": "Get Logger by Name",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "manager",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "secret",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -622,7 +623,7 @@
 								"com.lms.mentoring"
 							]
 						},
-						"description": "Returns the log level for a specific logger. Requires MANAGER role (manager/secret)."
+						"description": "Returns the log level for a specific logger. Requires authentication."
 					},
 					"response": []
 				},
@@ -630,16 +631,11 @@
 					"name": "Set Logger Level",
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "manager",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "secret",
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
 									"type": "string"
 								}
 							]
@@ -666,12 +662,41 @@
 								"com.lms.mentoring"
 							]
 						},
-						"description": "Dynamically changes the log level at runtime. Supported levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF. Requires MANAGER role (manager/secret)."
+						"description": "Dynamically changes the log level at runtime. Supported levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF. Requires authentication."
+					},
+					"response": []
+				},
+				{
+					"name": "Metrics",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/metrics",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"metrics"
+							]
+						},
+						"description": "Returns available metrics. Requires authentication."
 					},
 					"response": []
 				}
 			],
-			"description": "Spring Boot Actuator endpoints for monitoring and management. Requires MANAGER role - use credentials: manager/secret"
+			"description": "Spring Boot Actuator endpoints for monitoring and management.\n\n**Public endpoints:** /actuator/health, /actuator/info\n**Protected endpoints:** All others require authentication"
 		},
 		{
 			"name": "SAP BTP - Destination Service",
@@ -733,7 +758,7 @@
 								"token"
 							]
 						},
-						"description": "Gets an OAuth2 access token for Destination Service API calls. The token is automatically saved to environment variable 'destination_access_token'.\n\nRequired environment variables:\n- destination_clientid: from VCAP_SERVICES\n- destination_clientsecret: from VCAP_SERVICES\n- destination_token_url: from VCAP_SERVICES (url field)"
+						"description": "Gets an OAuth2 access token for Destination Service API calls."
 					},
 					"response": []
 				},
@@ -762,8 +787,7 @@
 								"v1",
 								"destinations"
 							]
-						},
-						"description": "Lists all destinations configured in the subaccount/service instance.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES"
+						}
 					},
 					"response": []
 				},
@@ -793,179 +817,30 @@
 								"destinations",
 								"{{destination_name}}"
 							]
-						},
-						"description": "Gets a specific destination configuration by name.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES\n- destination_name: name of the destination (e.g., 'lms-smtp')"
-					},
-					"response": []
-				},
-				{
-					"name": "Find Destination",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{destination_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{destination_uri}}/destination-configuration/v1/subaccountDestinations/{{destination_name}}",
-							"host": [
-								"{{destination_uri}}"
-							],
-							"path": [
-								"destination-configuration",
-								"v1",
-								"subaccountDestinations",
-								"{{destination_name}}"
-							]
-						},
-						"description": "Finds a destination at subaccount level.\n\nRequires:\n- destination_access_token (from 'Get OAuth Token' request)\n- destination_uri: from VCAP_SERVICES\n- destination_name: name of the destination"
+						}
 					},
 					"response": []
 				}
 			],
-			"description": "SAP BTP Destination Service API requests. Used to manage and retrieve destination configurations.\n\nTo use these requests:\n1. Get VCAP_SERVICES credentials from CF app: cf env learning-management-system\n2. Set environment variables from destination service binding:\n   - destination_clientid\n   - destination_clientsecret\n   - destination_token_url\n   - destination_uri\n3. First run 'Get OAuth Token' to obtain access_token\n4. Then use other requests with the token"
+			"description": "SAP BTP Destination Service API requests."
 		},
 		{
 			"name": "SAP BTP - Feature Flags Service",
 			"item": [
 				{
-					"name": "Get OAuth Token (Feature Flags)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"pm.environment.set(\"ff_access_token\", jsonData.access_token);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
+					"name": "Evaluate Feature Flag (Basic Auth)",
 					"request": {
 						"auth": {
 							"type": "basic",
 							"basic": [
 								{
 									"key": "username",
-									"value": "{{ff_clientid}}",
+									"value": "{{ff_username}}",
 									"type": "string"
 								},
 								{
 									"key": "password",
-									"value": "{{ff_clientsecret}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "client_credentials",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{ff_token_url}}/oauth/token",
-							"host": [
-								"{{ff_token_url}}"
-							],
-							"path": [
-								"oauth",
-								"token"
-							]
-						},
-						"description": "Gets an OAuth2 access token for Feature Flags Service API calls. The token is automatically saved to environment variable 'ff_access_token'.\n\nRequired environment variables:\n- ff_clientid: from VCAP_SERVICES\n- ff_clientsecret: from VCAP_SERVICES\n- ff_token_url: from VCAP_SERVICES (url field)"
-					},
-					"response": []
-				},
-				{
-					"name": "List All Feature Flags",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags"
-							]
-						},
-						"description": "Lists all feature flags configured in the service instance.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Feature Flag by ID",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags/{{flag_id}}",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags",
-								"{{flag_id}}"
-							]
-						},
-						"description": "Gets details of a specific feature flag.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag"
-					},
-					"response": []
-				},
-				{
-					"name": "Evaluate Feature Flag",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
+									"value": "{{ff_password}}",
 									"type": "string"
 								}
 							]
@@ -984,7 +859,7 @@
 								"{{flag_id}}"
 							]
 						},
-						"description": "Evaluates a feature flag and returns its current value.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag (e.g., 'use-destination-smtp')"
+						"description": "Evaluates a feature flag using Basic Auth.\n\nFeature Flags service 'lite' plan uses Basic Auth (username/password from service key).\n\nRequired environment variables:\n- ff_username: from service key\n- ff_password: from service key\n- ff_uri: from service key\n- flag_id: ID of the feature flag"
 					},
 					"response": []
 				},
@@ -992,11 +867,16 @@
 					"name": "Evaluate use-destination-smtp Flag",
 					"request": {
 						"auth": {
-							"type": "bearer",
-							"bearer": [
+							"type": "basic",
+							"basic": [
 								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
+									"key": "username",
+									"value": "{{ff_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{ff_password}}",
 									"type": "string"
 								}
 							]
@@ -1015,162 +895,12 @@
 								"use-destination-smtp"
 							]
 						},
-						"description": "Evaluates the 'use-destination-smtp' feature flag.\n\nThis flag controls SMTP credential retrieval strategy:\n- false (disabled): Use User-Provided Service (VCAP)\n- true (enabled): Use Destination Service\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
-					},
-					"response": []
-				},
-				{
-					"name": "Create Feature Flag",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": false,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
-						},
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags"
-							]
-						},
-						"description": "Creates a new feature flag.\n\nThis example creates the 'use-destination-smtp' flag with:\n- Boolean type\n- Default value: false (use VCAP)\n- Direct delivery enabled\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
-					},
-					"response": []
-				},
-				{
-					"name": "Update Feature Flag (Enable)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": true,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
-						},
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags/use-destination-smtp",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags",
-								"use-destination-smtp"
-							]
-						},
-						"description": "Updates the 'use-destination-smtp' flag to ENABLED.\n\nWhen enabled (variation: true), the application will:\n- Retrieve SMTP credentials from SAP Destination Service\n- Use the 'lms-smtp' destination configuration\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
-					},
-					"response": []
-				},
-				{
-					"name": "Update Feature Flag (Disable)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"id\": \"use-destination-smtp\",\n  \"description\": \"When enabled, SMTP credentials are retrieved from Destination Service. When disabled, credentials are retrieved from User-Provided Service.\",\n  \"variation\": false,\n  \"variationType\": \"BOOLEAN\",\n  \"directDelivery\": true\n}"
-						},
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags/use-destination-smtp",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags",
-								"use-destination-smtp"
-							]
-						},
-						"description": "Updates the 'use-destination-smtp' flag to DISABLED.\n\nWhen disabled (variation: false), the application will:\n- Retrieve SMTP credentials from User-Provided Service (VCAP_SERVICES)\n- Use the 'lms-smtp-credentials' user-provided service\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES"
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Feature Flag",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ff_access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{ff_uri}}/api/v2/flags/{{flag_id}}",
-							"host": [
-								"{{ff_uri}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"flags",
-								"{{flag_id}}"
-							]
-						},
-						"description": "Deletes a feature flag.\n\nRequires:\n- ff_access_token (from 'Get OAuth Token' request)\n- ff_uri: from VCAP_SERVICES\n- flag_id: ID of the feature flag to delete"
+						"description": "Evaluates the 'use-destination-smtp' feature flag.\n\nThis flag controls SMTP credential retrieval strategy:\n- false (disabled): Use User-Provided Service (VCAP)\n- true (enabled): Use Destination Service"
 					},
 					"response": []
 				}
 			],
-			"description": "SAP BTP Feature Flags Service API requests. Used to manage feature flags for runtime configuration.\n\nTo use these requests:\n1. Get VCAP_SERVICES credentials from CF app: cf env learning-management-system\n2. Set environment variables from feature-flags service binding:\n   - ff_clientid\n   - ff_clientsecret\n   - ff_token_url\n   - ff_uri\n3. First run 'Get OAuth Token' to obtain access_token\n4. Then use other requests with the token\n\nKey feature flag for this application:\n- use-destination-smtp: Controls SMTP credential source"
+			"description": "SAP BTP Feature Flags Service API requests.\n\n**Note:** Feature Flags 'lite' plan uses Basic Auth (username/password), not OAuth.\n\nGet credentials from service key:\n```\ncf service-key lms-feature-flags lms-feature-flags-key\n```"
 		}
 	]
 }

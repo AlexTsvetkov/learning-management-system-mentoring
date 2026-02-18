@@ -86,6 +86,7 @@
             <artifactId>spring-aspects</artifactId>
         </dependency>
 
+        <!-- SAP XSUAA Security for OAuth2 -->
         <dependency>
             <groupId>com.sap.cloud.security.xsuaa</groupId>
             <artifactId>spring-xsuaa</artifactId>
@@ -95,6 +96,12 @@
             <groupId>com.sap.cloud.security.xsuaa</groupId>
             <artifactId>token-client</artifactId>
             <version>3.1.2</version>
+        </dependency>
+        
+        <!-- OAuth2 Resource Server for JWT validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
 
         <!-- Liquibase -->

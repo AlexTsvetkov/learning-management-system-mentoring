@@ -1,0 +1,35 @@
+{
+  "xsappname": "learning-management-system",
+  "tenant-mode": "dedicated",
+  "description": "Learning Management System - OAuth2 Security Configuration",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.user",
+      "description": "Basic user access"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "User",
+      "description": "Standard user with access to the application",
+      "scope-references": [
+        "$XSAPPNAME.user"
+      ]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "LMS_User",
+      "description": "LMS Application Users",
+      "role-template-references": [
+        "$XSAPPNAME.User"
+      ]
+    }
+  ],
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.us10-001.hana.ondemand.com/**"
+    ],
+    "token-validity": 900
+  }
+}

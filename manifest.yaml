@@ -23,6 +23,7 @@ applications:
       - lms-destination
       - lms-feature-flags
       - lms-smtp-credentials
+      - lms-xsuaa
     health-check-type: http
     health-check-http-endpoint: /actuator/health
     timeout: 180

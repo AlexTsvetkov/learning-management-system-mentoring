@@ -87,7 +87,21 @@ spring:
 
 # SAP BTP Services Configuration
 # These values are populated from VCAP_SERVICES when bound to services
+# XSUAA Configuration (auto-configured from VCAP_SERVICES binding)
+spring.security.oauth2.resourceserver.jwt:
+  jwk-set-uri: ${vcap.services.lms-xsuaa.credentials.url}/.well-known/jwks.json
+  issuer-uri: ${vcap.services.lms-xsuaa.credentials.url}
+
 sap:
+  # XSUAA Configuration
+  xsuaa:
+    service:
+      name: lms-xsuaa
+      # These are auto-populated from VCAP_SERVICES binding
+      url: ${vcap.services.lms-xsuaa.credentials.url:}
+      clientid: ${vcap.services.lms-xsuaa.credentials.clientid:}
+      clientsecret: ${vcap.services.lms-xsuaa.credentials.clientsecret:}
+      xsappname: ${vcap.services.lms-xsuaa.credentials.xsappname:}
   # Destination Service Configuration
   destination:
     service:
