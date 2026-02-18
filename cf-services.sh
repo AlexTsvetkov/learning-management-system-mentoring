@@ -115,8 +115,8 @@ echo "[6/6] User-Provided SMTP Credentials Service"
 SMTP_CREDENTIALS='{
   "host": "sandbox.smtp.mailtrap.io",
   "port": "2525",
-  "username": "your-mailtrap-username",
-  "password": "your-mailtrap-password",
+  "username": "0d4c2be927fce4",
+  "password": "ff941ef75b43cf",
   "from": "no-reply@lms.example.com"
 }'
 
