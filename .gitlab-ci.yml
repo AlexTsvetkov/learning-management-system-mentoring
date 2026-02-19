@@ -20,9 +20,6 @@ variables:
 # Default tags for all jobs - use our project runner
 default:
   tags:
-    - java
-    - maven
-    - spring-boot
     - docker
 
 # Cache Maven dependencies between pipeline runs
