@@ -5,6 +5,8 @@
 # 1. Build: Compile and package the application
 # 2. Test: Run unit tests
 # 3. Deploy: Deploy to SAP BTP Cloud Foundry
+#
+# Runner tags: java, maven, spring-boot, docker
 
 image: maven:3.9.6-eclipse-temurin-17
 
@@ -14,6 +16,14 @@ variables:
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
   # Application artifact name
   ARTIFACT_NAME: "learning-management-system-0.1.0.jar"
+
+# Default tags for all jobs - use our project runner
+default:
+  tags:
+    - java
+    - maven
+    - spring-boot
+    - docker
 
 # Cache Maven dependencies between pipeline runs
 cache:
@@ -71,7 +81,7 @@ deploy-dev:
   stage: deploy
   image: governmentpaas/cf-cli:latest
   before_script:
-    - echo "Installing Cloud Foundry CLI..."
+    - echo "Preparing Cloud Foundry deployment..."
   script:
     - echo "Logging into SAP BTP Cloud Foundry..."
     - cf login -a "$CF_API" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE"
