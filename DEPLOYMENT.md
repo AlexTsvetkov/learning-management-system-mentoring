@@ -2,6 +2,15 @@
 
 This document provides instructions for deploying the Learning Management System application to SAP BTP Cloud Foundry.
 
+## Deployment Options
+
+This project supports two deployment methods:
+
+| Method | Tool | Best For |
+|--------|------|----------|
+| **MTA Deployment** (Recommended) | `mbt` + `cf deploy` | Production deployments, CI/CD pipelines, automated service management |
+| **CF Push** | `cf push` | Quick deployments, development/testing, manual service management |
+
 ## Prerequisites
 
 1. **SAP BTP Trial Account**
@@ -12,8 +21,17 @@ This document provides instructions for deploying the Learning Management System
    - Download from: https://docs.cloudfoundry.org/cf-cli/install-go-cli.html
    - Verify installation: `cf --version`
 
-3. **Java 21 and Maven**
-   - Java 21 JDK installed
+3. **Cloud MTA Build Tool (mbt)** - For MTA deployment
+   - Install via npm: `npm install -g mbt`
+   - Or download from: https://sap.github.io/cloud-mta-build-tool/
+   - Verify installation: `mbt --version`
+
+4. **MultiApps CF CLI Plugin** - For MTA deployment
+   - Install: `cf install-plugin multiapps`
+   - Verify: `cf plugins | grep multiapps`
+
+5. **Java 17 and Maven**
+   - Java 17 JDK installed
    - Maven 3.8+ installed
 
 ## Service Bindings
@@ -23,13 +41,162 @@ The application requires the following SAP BTP services:
 | Service | Plan | Instance Name | Description |
 |---------|------|---------------|-------------|
 | HANA DB | hana-free | lms-hana-db | SAP HANA Cloud database |
+| XSUAA | application | lms-xsuaa | OAuth2 authentication service |
 | Application Logging | lite | lms-application-logging | Centralized logging service |
 | Application Autoscaler | standard | lms-application-autoscaler | Auto-scaling based on metrics |
 | Destination | lite | lms-destination | External connectivity management |
 | Feature Flags | lite | lms-feature-flags | Feature toggle management |
 | User-Provided | - | lms-smtp-credentials | SMTP server credentials |
 
-## Deployment Steps
+---
+
+## Option 1: MTA Deployment (Recommended)
+
+MTA (Multi-Target Application) deployment is the recommended approach for SAP BTP applications. It provides:
+- **Declarative deployment**: All services and configurations defined in `mta.yaml`
+- **Automated service management**: Services are created/updated automatically
+- **Blue-green deployment**: Zero-downtime deployments
+- **Rollback support**: Easy rollback to previous versions
+- **CI/CD integration**: Ideal for automated pipelines
+
+### MTA Deployment Steps
+
+#### Step 1: Login to Cloud Foundry
+
+```bash
+# Login to SAP BTP Cloud Foundry
+cf login -a https://api.cf.us10-001.hana.ondemand.com
+
+# Or use SSO
+cf login -a https://api.cf.us10-001.hana.ondemand.com --sso
+```
+
+#### Step 2: Configure SMTP Credentials
+
+Before deploying, update the SMTP credentials in `mta.yaml`:
+
+```yaml
+# In mta.yaml, find the lms-smtp-credentials resource and update:
+- name: lms-smtp-credentials
+  type: org.cloudfoundry.user-provided-service
+  parameters:
+    service-name: lms-smtp-credentials
+    config:
+      host: sandbox.smtp.mailtrap.io
+      port: "2525"
+      username: "YOUR_ACTUAL_USERNAME"    # <-- Update this
+      password: "YOUR_ACTUAL_PASSWORD"    # <-- Update this
+      from: no-reply@lms.example.com
+```
+
+> **Security Note**: For production, consider using environment variables or a secrets manager instead of hardcoding credentials.
+
+#### Step 3: Build the Application
+
+```bash
+# Build the Java application
+mvn clean package -P cloud -DskipTests
+
+# The JAR file will be created at: target/learning-management-system-0.1.0.jar
+```
+
+#### Step 4: Build the MTA Archive
+
+```bash
+# Build the MTA archive (.mtar file)
+mbt build
+
+# This creates: mta_archives/learning-management-system_0.1.0.mtar
+```
+
+Alternatively, build with custom output directory:
+
+```bash
+mbt build --mtar learning-management-system.mtar --target ./
+```
+
+#### Step 5: Deploy to Cloud Foundry
+
+```bash
+# Deploy the MTA archive
+cf deploy mta_archives/learning-management-system_0.1.0.mtar
+
+# Or if you specified a custom target:
+cf deploy learning-management-system.mtar
+```
+
+#### Deployment Options
+
+```bash
+# Blue-green deployment (zero-downtime)
+cf bg-deploy mta_archives/learning-management-system_0.1.0.mtar
+
+# Deploy without starting the application
+cf deploy mta_archives/learning-management-system_0.1.0.mtar --no-start
+
+# Force delete of existing services (use with caution!)
+cf deploy mta_archives/learning-management-system_0.1.0.mtar --delete-services
+
+# Skip service updates (deploy app only)
+cf deploy mta_archives/learning-management-system_0.1.0.mtar --skip-ownership-validation
+```
+
+#### Step 6: Verify Deployment
+
+```bash
+# Check MTA deployment status
+cf mtas
+
+# Check MTA operations
+cf mta-ops
+
+# Get details of deployed MTA
+cf mta learning-management-system
+
+# Check application status
+cf apps
+
+# View recent logs
+cf logs learning-management-system --recent
+```
+
+### MTA Management Commands
+
+```bash
+# List all deployed MTAs
+cf mtas
+
+# Get MTA details
+cf mta learning-management-system
+
+# List MTA operations (deployments/undeployments)
+cf mta-ops
+
+# Abort a running MTA operation
+cf mta-ops --abort <operation-id>
+
+# Undeploy MTA (removes app and services)
+cf undeploy learning-management-system --delete-services
+
+# Undeploy MTA (keep services)
+cf undeploy learning-management-system
+```
+
+### MTA Configuration Files
+
+| File | Description |
+|------|-------------|
+| `mta.yaml` | MTA descriptor - defines modules, resources, and dependencies |
+| `xs-security.json` | XSUAA security configuration |
+| `autoscaler-config.json` | Application autoscaler policy |
+
+---
+
+## Option 2: CF Push Deployment
+
+Traditional Cloud Foundry deployment using `cf push` with `manifest.yaml`. Best for quick deployments and development/testing scenarios.
+
+### CF Push Deployment Steps
 
 ### Step 1: Login to Cloud Foundry
 
@@ -208,7 +375,57 @@ cf app learning-management-system
 
 ## Troubleshooting
 
-### Common Issues
+### MTA Deployment Issues
+
+1. **MTA build fails**
+   ```bash
+   # Check mbt version
+   mbt --version
+   
+   # Validate mta.yaml syntax
+   mbt validate
+   
+   # Build with verbose output
+   mbt build -v
+   ```
+
+2. **MTA deployment fails**
+   ```bash
+   # Check MTA operation status
+   cf mta-ops
+   
+   # Get detailed operation logs
+   cf dmol -i <operation-id>
+   
+   # Retry failed deployment
+   cf deploy mta_archives/learning-management-system_0.1.0.mtar --retries 3
+   ```
+
+3. **Service already exists (owned by another MTA)**
+   ```bash
+   # Check which MTA owns the service
+   cf service <service-name>
+   
+   # Option 1: Undeploy the other MTA first
+   cf undeploy <other-mta-id>
+   
+   # Option 2: Skip ownership validation (use existing services)
+   cf deploy mta_archives/learning-management-system_0.1.0.mtar --skip-ownership-validation
+   ```
+
+4. **Blue-green deployment stuck**
+   ```bash
+   # List running operations
+   cf mta-ops
+   
+   # Abort the operation
+   cf mta-ops --abort <operation-id>
+   
+   # Clean up idle apps (after bg-deploy)
+   cf delete learning-management-system-idle -f
+   ```
+
+### CF Push Issues
 
 1. **Service creation fails**
    ```bash
@@ -404,9 +621,17 @@ Copy the following values to your Postman cloud environment:
 
 ## Additional Resources
 
+### MTA Resources
+- [Cloud MTA Build Tool (mbt)](https://sap.github.io/cloud-mta-build-tool/)
+- [MTA Descriptor Schema](https://help.sap.com/docs/btp/sap-business-technology-platform/mta-descriptor-syntax)
+- [MultiApps CF CLI Plugin](https://github.com/cloudfoundry/multiapps-cli-plugin)
+- [MTA Deployment Guide](https://help.sap.com/docs/btp/sap-business-technology-platform/multitarget-application-deployment)
+
+### SAP BTP Documentation
 - [SAP BTP Documentation](https://help.sap.com/btp)
 - [Cloud Foundry Documentation](https://docs.cloudfoundry.org/)
 - [SAP HANA Cloud](https://help.sap.com/docs/hana-cloud)
 - [Application Autoscaler](https://help.sap.com/docs/Application_Autoscaler)
 - [Feature Flags Service](https://help.sap.com/docs/feature-flags-service)
 - [Destination Service](https://help.sap.com/docs/connectivity/sap-btp-connectivity-cf/consuming-destination-service)
+- [XSUAA Service](https://help.sap.com/docs/btp/sap-business-technology-platform/user-authentication-and-authorization)

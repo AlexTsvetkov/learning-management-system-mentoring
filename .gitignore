@@ -55,4 +55,12 @@ surefire-reports/
 failsafe-reports/
 test-output/
 
+# =========================
+# MTA Build
+# =========================
+mta_archives/
+*.mtar
+.*.mta_build_tmp/
+Makefile_*.mta
+
 cf-commands.md

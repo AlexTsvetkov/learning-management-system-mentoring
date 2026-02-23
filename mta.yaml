@@ -1,0 +1,111 @@
+_schema-version: "3.2"
+ID: learning-management-system
+version: 0.1.0
+description: Learning Management System - Spring Boot application with CRUD, scheduling, email, and coin-based payments
+
+parameters:
+  enable-parallel-deployments: true
+
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - echo "Using pre-built JAR. Run 'mvn clean package -P cloud -DskipTests' before 'mbt build' if needed."
+
+modules:
+  - name: learning-management-system
+    type: java
+    path: .
+    build-parameters:
+      builder: custom
+      commands: []
+      build-result: target/learning-management-system-0.1.0.jar
+    parameters:
+      memory: 1024M
+      disk-quota: 512M
+      instances: 1
+      buildpack: sap_java_buildpack_jakarta
+      health-check-type: http
+      health-check-http-endpoint: /actuator/health
+      health-check-timeout: 180
+    properties:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+      JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
+      SPRING_PROFILES_ACTIVE: cloud
+    provides:
+      - name: lms-api
+        properties:
+          url: ${default-url}
+    requires:
+      - name: lms-hana-db
+      - name: lms-xsuaa
+      - name: lms-destination
+      - name: lms-feature-flags
+      - name: lms-application-logging
+      - name: lms-application-autoscaler
+      - name: lms-smtp-credentials
+
+resources:
+  # SAP HANA Cloud Database
+  - name: lms-hana-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: hana-cloud
+      service-plan: hana-free
+      service-name: lms-hana-db
+
+  # XSUAA Service (OAuth2 Authentication)
+  - name: lms-xsuaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      service-name: lms-xsuaa
+      path: xs-security.json
+
+  # Destination Service
+  - name: lms-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      service-name: lms-destination
+      config:
+        version: 1.0.0
+        HTML5Runtime_enabled: false
+
+  # Feature Flags Service
+  - name: lms-feature-flags
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: feature-flags
+      service-plan: lite
+      service-name: lms-feature-flags
+
+  # Application Logging Service
+  - name: lms-application-logging
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: application-logs
+      service-plan: lite
+      service-name: lms-application-logging
+
+  # Application Autoscaler Service
+  - name: lms-application-autoscaler
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: autoscaler
+      service-plan: standard
+      service-name: lms-application-autoscaler
+
+  # User-Provided SMTP Credentials Service
+  - name: lms-smtp-credentials
+    type: org.cloudfoundry.user-provided-service
+    parameters:
+      service-name: lms-smtp-credentials
+      config:
+        host: sandbox.smtp.mailtrap.io
+        port: "2525"
+        username: "0d4c2be927fce4",
+        password: "ff941ef75b43cf",
+        from: no-reply@lms.example.com
