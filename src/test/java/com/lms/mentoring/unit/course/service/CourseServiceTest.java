@@ -1,12 +1,14 @@
-package com.lms.mentoring.course.service;
+package com.lms.mentoring.unit.course.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.repository.CourseRepository;
+import com.lms.mentoring.course.service.CourseService;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import com.lms.mentoring.util.TestDataGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -21,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 class CourseServiceTest {
 
     private CourseRepository repo;
@@ -39,7 +42,7 @@ class CourseServiceTest {
         // given
         LocalDateTime start = LocalDateTime.now().plusDays(1).withHour(0);
         LocalDateTime end = start.plusDays(1).minusSeconds(1);
-        when(repo.findBySettings_StartDateBetween(start, end)).thenReturn(Collections.emptyList());
+        when(repo.findByStartDateBetweenWithSettings(start, end)).thenReturn(Collections.emptyList());
 
         // when
         var result = service.findStartingBetween(start, end);

@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "local-lms-collection-001",
 		"name": "LMS Mentoring API - Local",
-		"description": "Postman collection for Learning Management System (Mentoring Project) - Local Development\n\n## Authentication\n\nThis collection is configured for **local development** with Basic Authentication.\n\n### Available Users\n\n| Username | Password | Roles | Access |\n|----------|----------|-------|--------|\n| user | password | USER | API endpoints |\n| manager | secret | USER, MANAGER | API + Actuator endpoints |\n\n### Environment Variables for Auth\n- `basic_username` / `basic_password` - Standard user credentials\n- `manager_username` / `manager_password` - Manager credentials\n\n### Public Endpoints (No Auth Required)\n- GET /actuator/health\n- GET /actuator/info\n- GET /swagger-ui/**\n- GET /v3/api-docs/**\n- GET /h2-console/**\n\n## Environment Variables\n\nUse with `local` environment:\n- `host`: http://localhost:8080\n- `studentId`: Sample student UUID\n- `courseId`: Sample course UUID",
+		"description": "Postman collection for Learning Management System (Mentoring Project) - Local Development\n\n## Authentication\n\nThis collection is configured for **local development** with Basic Authentication.\n\n### Available Users\n\n| Username | Password | Roles | Access |\n|----------|----------|-------|--------|\n| user | password | USER | API endpoints |\n| manager | secret | USER, MANAGER | API + Actuator endpoints |\n\n### Environment Variables for Auth\n- `basic_username` / `basic_password` - Standard user credentials\n- `manager_username` / `manager_password` - Manager credentials\n\n### Public Endpoints (No Auth Required)\n- GET /actuator/health\n- GET /actuator/info\n- GET /swagger-ui/**\n- GET /v3/api-docs/**\n- GET /h2-console/**\n\n## Environment Variables\n\nUse with `local` environment:\n- `host`: http://localhost:8080\n- `studentId`: Sample student UUID\n- `courseId`: Sample course UUID\n\n## Pagination\n\nGET all endpoints support pagination via query parameters:\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Page size (default: 20)\n- `sort`: Sort field and direction (e.g., `title,asc` or `createdAt,desc`)\n\nExample: `GET /api/v1/students?page=0&size=10&sort=lastName,asc`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -40,7 +40,59 @@
 								"students"
 							]
 						},
-						"description": "Returns all students.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+						"description": "Returns all students.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Pagination:** Supports `page`, `size`, `sort` query parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Students (Paginated)",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/students?page=0&size=10&sort=lastName,asc",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-indexed)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Number of items per page"
+								},
+								{
+									"key": "sort",
+									"value": "lastName,asc",
+									"description": "Sort by field and direction (e.g., lastName,asc or createdAt,desc)"
+								}
+							]
+						},
+						"description": "Returns paginated students.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Pagination Parameters:**\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Number of items per page (default: 20)\n- `sort`: Sort field and direction (e.g., `lastName,asc`)\n\n**Response includes:**\n- `content`: Array of students\n- `totalElements`: Total number of students\n- `totalPages`: Total number of pages\n- `size`: Page size\n- `number`: Current page number"
 					},
 					"response": []
 				},
@@ -107,7 +159,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"dateOfBirth\": \"2000-01-01\",\n  \"coins\": 500.00\n}"
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"dateOfBirth\": \"2000-01-01\",\n  \"coins\": 500.00,\n  \"locale\": \"en\"\n}"
 						},
 						"url": {
 							"raw": "{{host}}/api/v1/students",
@@ -120,7 +172,7 @@
 								"students"
 							]
 						},
-						"description": "Creates a new student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+						"description": "Creates a new student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**New Fields:**\n- `locale`: Language preference for email notifications (en, de, ru). Defaults to 'en'."
 					},
 					"response": []
 				},
@@ -151,7 +203,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"id\": \"{{studentId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"dateOfBirth\": \"1998-03-15\",\n  \"coins\": 300.00\n}"
+							"raw": "{\n  \"id\": \"{{studentId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"dateOfBirth\": \"1998-03-15\",\n  \"coins\": 300.00,\n  \"locale\": \"de\"\n}"
 						},
 						"url": {
 							"raw": "{{host}}/api/v1/students/{{studentId}}",
@@ -165,7 +217,7 @@
 								"{{studentId}}"
 							]
 						},
-						"description": "Updates an existing student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+						"description": "Updates an existing student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**New Fields:**\n- `locale`: Language preference for email notifications (en, de, ru)"
 					},
 					"response": []
 				},
@@ -279,7 +331,59 @@
 								"courses"
 							]
 						},
-						"description": "Returns all courses.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+						"description": "Returns all courses.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Pagination:** Supports `page`, `size`, `sort` query parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Courses (Paginated)",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses?page=0&size=10&sort=title,asc",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-indexed)"
+								},
+								{
+									"key": "size",
+									"value": "10",
+									"description": "Number of items per page"
+								},
+								{
+									"key": "sort",
+									"value": "title,asc",
+									"description": "Sort by field and direction (e.g., title,asc or createdAt,desc)"
+								}
+							]
+						},
+						"description": "Returns paginated courses.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Pagination Parameters:**\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Number of items per page (default: 20)\n- `sort`: Sort field and direction (e.g., `title,asc`)\n\n**Response includes:**\n- `content`: Array of courses\n- `totalElements`: Total number of courses\n- `totalPages`: Total number of pages\n- `size`: Page size\n- `number`: Current page number"
 					},
 					"response": []
 				},
@@ -441,6 +545,43 @@
 							]
 						},
 						"description": "Deletes a course by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Course Lessons",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons"
+							]
+						},
+						"description": "Returns all lessons for a specific course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Lesson Types:**\n- `BASIC`: Standard lesson with title and duration\n- `CLASSROOM`: In-person lesson with location and capacity\n- `VIDEO`: Online lesson with URL and platform\n\n**Response Example:**\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Java Basics\",\n    \"duration\": 45,\n    \"lessonType\": \"BASIC\"\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Live Workshop\",\n    \"duration\": 90,\n    \"lessonType\": \"CLASSROOM\",\n    \"location\": \"Room A101\",\n    \"capacity\": 30\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Video Tutorial\",\n    \"duration\": 35,\n    \"lessonType\": \"VIDEO\",\n    \"url\": \"https://youtube.com/...\",\n    \"platform\": \"YouTube\"\n  }\n]\n```"
 					},
 					"response": []
 				}

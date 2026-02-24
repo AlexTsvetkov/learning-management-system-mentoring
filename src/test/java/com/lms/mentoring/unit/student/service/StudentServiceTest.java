@@ -1,10 +1,12 @@
-package com.lms.mentoring.student.service;
+package com.lms.mentoring.unit.student.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
+import com.lms.mentoring.student.service.StudentService;
 import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 class StudentServiceTest {
 
     private StudentRepository repo;
@@ -76,7 +79,7 @@ class StudentServiceTest {
         Course course2 = TestDataGenerator.createDefaultCourse();
         course2.setTitle("Spring Boot");
         Student student = TestDataGenerator.createStudentWithCourses(List.of(course1, course2));
-        when(repo.findById(student.getId())).thenReturn(Optional.of(student));
+        when(repo.findByIdWithCourses(student.getId())).thenReturn(Optional.of(student));
 
         // when
         List<Course> result = service.findCoursesByStudentId(student.getId());
@@ -90,7 +93,7 @@ class StudentServiceTest {
     void findCoursesByStudentId_WhenStudentNotFound_ShouldReturnEmptyList() {
         // given
         Student student = TestDataGenerator.createDefaultStudent();
-        when(repo.findById(student.getId())).thenReturn(Optional.empty());
+        when(repo.findByIdWithCourses(student.getId())).thenReturn(Optional.empty());
 
         // when
         List<Course> result = service.findCoursesByStudentId(student.getId());
@@ -103,7 +106,7 @@ class StudentServiceTest {
     void findCoursesByStudentId_WhenStudentHasNoCourses_ShouldReturnEmptyList() {
         // given
         Student student = TestDataGenerator.createDefaultStudent();
-        when(repo.findById(student.getId())).thenReturn(Optional.of(student));
+        when(repo.findByIdWithCourses(student.getId())).thenReturn(Optional.of(student));
 
         // when
         List<Course> result = service.findCoursesByStudentId(student.getId());

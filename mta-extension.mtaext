@@ -1,0 +1,113 @@
+_schema-version: "3.2"
+ID: learning-management-system-extension
+extends: learning-management-system
+version: 0.1.0
+
+# MTA Extension file for environment-specific deployment configurations
+# Usage: mbt build -e mta-extension.mtaext && cf deploy mta_archives/*.mtar -e mta-extension.mtaext
+
+parameters:
+  # Override deployment parameters for specific environment
+  enable-parallel-deployments: true
+
+modules:
+  - name: learning-management-system
+    parameters:
+      # Memory and scaling configuration - can be overridden per environment
+      memory: 1024M
+      disk-quota: 512M
+      instances: 1
+      # Health check configuration
+      health-check-type: http
+      health-check-http-endpoint: /actuator/health
+      health-check-timeout: 180
+    properties:
+      # Java runtime configuration
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
+      JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
+      # Spring profile - set to cloud for production deployment
+      SPRING_PROFILES_ACTIVE: cloud
+      # Application-specific environment variables (override as needed)
+      # EMAIL_NOTIFICATIONS_ENABLED: "true"
+      # FEATURE_FLAGS_ENABLED: "true"
+      # PAGINATION_DEFAULT_SIZE: "20"
+      # PAGINATION_MAX_SIZE: "100"
+
+resources:
+  # SAP HANA Cloud Database - production configuration
+  - name: lms-hana-db
+    parameters:
+      service: hana-cloud
+      service-plan: hana-free
+      # For production, consider using 'hana' plan with specific config:
+      # service-plan: hana
+      # config:
+      #   memory: 32
+      #   vcpu: 2
+      #   storage: 120
+
+  # XSUAA Service - OAuth2 Authentication
+  - name: lms-xsuaa
+    parameters:
+      service: xsuaa
+      service-plan: application
+      # For production with higher request volumes:
+      # service-plan: broker
+
+  # Destination Service
+  - name: lms-destination
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        version: 1.0.0
+        HTML5Runtime_enabled: false
+        # Additional destination configurations can be added here
+        # init_data:
+        #   instance:
+        #     existing_destinations_policy: update
+        #     destinations:
+        #       - Name: external-api
+        #         Type: HTTP
+        #         URL: https://api.external-service.com
+        #         Authentication: NoAuthentication
+
+  # Feature Flags Service
+  - name: lms-feature-flags
+    parameters:
+      service: feature-flags
+      service-plan: lite
+
+  # Application Logging Service
+  - name: lms-application-logging
+    parameters:
+      service: application-logs
+      service-plan: lite
+
+  # Application Autoscaler Service
+  - name: lms-application-autoscaler
+    parameters:
+      service: autoscaler
+      service-plan: standard
+      # Override autoscaler configuration if needed
+      # config:
+      #   instance_min_count: 1
+      #   instance_max_count: 4
+      #   scaling_rules:
+      #     - metric_type: cpu
+      #       threshold: 80
+      #       operator: ">="
+      #       adjustment: "+1"
+      #       cool_down_secs: 60
+
+  # User-Provided SMTP Credentials Service
+  # Override with environment-specific SMTP credentials
+  - name: lms-smtp-credentials
+    parameters:
+      config:
+        # Override these values per environment
+        host: "${SMTP_HOST}"
+        port: "${SMTP_PORT}"
+        username: "${SMTP_USERNAME}"
+        password: "${SMTP_PASSWORD}"
+        from: "${SMTP_FROM_ADDRESS}"

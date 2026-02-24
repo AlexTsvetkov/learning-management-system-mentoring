@@ -1,12 +1,15 @@
-package com.lms.mentoring.student.mapper;
+package com.lms.mentoring.unit.student.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
+import com.lms.mentoring.student.mapper.StudentMapper;
+import com.lms.mentoring.student.mapper.StudentMapperImpl;
 import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
@@ -14,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 class StudentMapperTest {
 
     private final StudentMapper mapper = Mappers.getMapper(StudentMapper.class);

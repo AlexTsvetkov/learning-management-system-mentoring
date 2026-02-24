@@ -19,24 +19,31 @@ import java.nio.charset.StandardCharsets;
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final String DEFAULT_LOCALE = "en";
 
     private final JavaMailSender mailSender;
+    private final EmailTemplateService templateService;
     private final String fromAddress;
 
     public EmailService(JavaMailSender mailSender,
+                        EmailTemplateService templateService,
                         @Value("${spring.mail.username:no-reply@example.com}") String fromAddress) {
         this.mailSender = mailSender;
+        this.templateService = templateService;
         this.fromAddress = fromAddress;
     }
 
     /**
      * Sends an email to a student reminding them that their course starts tomorrow.
+     * Uses the student's locale preference for email localization.
      */
     public void sendCourseStartingNotification(StudentDto student, CourseDto course) {
         log.info("Sending course starting notification for student: {} and course: {}", student, course);
+        
         String to = student.getEmail();
-        String subject = String.format("Reminder: Course \"%s\" starts tomorrow", course.getTitle());
-        String htmlBody = buildEmailTemplate(student, course);
+        String locale = getStudentLocale(student);
+        String subject = templateService.getCourseStartNotificationSubject(course, locale);
+        String htmlBody = templateService.renderCourseStartNotification(student, course, locale);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -50,38 +57,24 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(htmlBody, true); // true = HTML email
             mailSender.send(message);
-            log.info("Sent course start notification to {}", to);
+            log.info("Sent course start notification to {} in locale {}", to, locale);
         } catch (Exception ex) {
             log.error("Failed to send course start email to {}: {}", to, ex.getMessage(), ex);
         }
     }
 
     /**
-     * Builds a simple HTML email template for course start reminder.
+     * Gets the student's locale preference, defaulting to English if not set.
      */
-    private String buildEmailTemplate(StudentDto student, CourseDto course) {
-        String name = (student.getFirstName() != null && !student.getFirstName().isBlank())
-                ? student.getFirstName()
-                : student.getEmail();
-
-        String startDate = (course.getStartDate() != null)
-                ? course.getStartDate().toLocalDate().toString()
-                : "tomorrow";
-
-        return """
-                <html>
-                <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                    <h2 style="color: #2E86C1;">Course Reminder</h2>
-                    <p>Hello %s,</p>
-                    <p>This is a friendly reminder that your course <strong>%s</strong> starts on
-                    <strong>%s</strong>.</p>
-                    <p>Please make sure you have reviewed the course materials and are ready to begin.</p>
-                    <p>Best regards,<br>
-                    <em>The Learning Management System Team</em></p>
-                    <hr>
-                    <p style="font-size: 12px; color: #888;">This is an automated email — please do not reply.</p>
-                </body>
-                </html>
-                """.formatted(name, course.getTitle(), startDate);
+    private String getStudentLocale(StudentDto student) {
+        String locale = student.getLocale();
+        if (locale == null || locale.isBlank()) {
+            return DEFAULT_LOCALE;
+        }
+        // Extract language code if full locale (e.g., "en_US" -> "en")
+        if (locale.contains("_")) {
+            locale = locale.split("_")[0];
+        }
+        return locale.toLowerCase();
     }
 }

@@ -6,6 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <include file="db/changelog/db.changelog-create-schema.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/db.changelog-add-lesson-types-and-audit.xml" relativeToChangelogFile="false"/>
 
     <changeSet id="init-data-sql" author="aliaksandr.tsviatkou">
         <sqlFile path="db/changelog/sql/data/init-data.sql" relativeToChangelogFile="false"/>

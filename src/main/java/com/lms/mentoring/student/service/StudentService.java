@@ -4,6 +4,8 @@ import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +30,22 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public Optional<Student> findById(UUID id) {
-        return repo.findById(id);
+        return repo.findByIdWithCourses(id);
     }
 
+    @Transactional(readOnly = true)
     public List<Student> findAll() {
-        return repo.findAll();
+        return repo.findAllWithCourses();
+    }
+
+    /**
+     * Find all students with pagination support.
+     * @param pageable pagination parameters
+     * @return page of students
+     */
+    @Transactional(readOnly = true)
+    public Page<Student> findAll(Pageable pageable) {
+        return repo.findAllBy(pageable);
     }
 
     public void delete(UUID id) {
@@ -46,6 +59,7 @@ public class StudentService {
         return repo.save(s);
     }
 
+    @Transactional
     public boolean chargeCoins(UUID studentId, BigDecimal amount) {
         Student st = repo.findById(studentId).orElseThrow();
         BigDecimal balance = st.getCoins() == null ? BigDecimal.ZERO : st.getCoins();
@@ -57,8 +71,18 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<Course> findCoursesByStudentId(UUID studentId) {
-        return repo.findById(studentId)
+        return repo.findByIdWithCourses(studentId)
                 .map(Student::getCourses)
                 .orElse(Collections.emptyList());
+    }
+
+    /**
+     * Find students enrolled in a specific course.
+     * @param courseId the course ID
+     * @return list of students
+     */
+    @Transactional(readOnly = true)
+    public List<Student> findByCourseId(UUID courseId) {
+        return repo.findByCourseId(courseId);
     }
 }

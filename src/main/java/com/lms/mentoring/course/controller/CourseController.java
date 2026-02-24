@@ -1,10 +1,15 @@
 package com.lms.mentoring.course.controller;
 
 import com.lms.mentoring.course.dto.CourseDto;
+import com.lms.mentoring.course.dto.LessonDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
+import com.lms.mentoring.course.mapper.LessonMapper;
 import com.lms.mentoring.course.service.CourseService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,15 +29,24 @@ import java.util.stream.Collectors;
 public class CourseController {
     private final CourseService service;
     private final CourseMapper mapper;
+    private final LessonMapper lessonMapper;
 
-    public CourseController(CourseService service, CourseMapper mapper) {
+    public CourseController(CourseService service, CourseMapper mapper, LessonMapper lessonMapper) {
         this.service = service;
         this.mapper = mapper;
+        this.lessonMapper = lessonMapper;
     }
 
+    /**
+     * Get all courses with pagination support.
+     * 
+     * @param pageable pagination parameters (page, size, sort)
+     *                 Example: /api/v1/courses?page=0&size=10&sort=title,asc
+     * @return paginated list of courses
+     */
     @GetMapping
-    public List<CourseDto> all() {
-        return service.findAll().stream().map(mapper::toDto).collect(Collectors.toList());
+    public Page<CourseDto> all(@PageableDefault(size = 20, sort = "title") Pageable pageable) {
+        return service.findAll(pageable).map(mapper::toDto);
     }
 
     @GetMapping("/{id}")
@@ -60,5 +74,21 @@ public class CourseController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Get all lessons for a specific course.
+     * 
+     * @param id the course ID
+     * @return list of lessons (BASIC, CLASSROOM, or VIDEO types)
+     */
+    @GetMapping("/{id}/lessons")
+    public ResponseEntity<List<LessonDto>> getLessons(@PathVariable UUID id) {
+        return service.findByIdWithLessons(id)
+                .map(course -> course.getLessons().stream()
+                        .map(lessonMapper::toDto)
+                        .collect(Collectors.toList()))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

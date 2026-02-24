@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="
+        http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Add locale field to students table -->
+    <changeSet id="2-add-locale-to-students" author="aliaksandr.tsviatkou">
+        <addColumn tableName="students">
+            <column name="locale" type="varchar(10)" defaultValue="en">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add lesson type discriminator and new fields for lesson inheritance -->
+    <changeSet id="3-add-lesson-type-and-fields" author="aliaksandr.tsviatkou">
+        <addColumn tableName="lessons">
+            <!-- Discriminator column for Single Table inheritance -->
+            <column name="lesson_type" type="varchar(31)" defaultValue="BASIC">
+                <constraints nullable="false"/>
+            </column>
+            <!-- ClassroomLesson fields -->
+            <column name="location" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="capacity" type="INT">
+                <constraints nullable="true"/>
+            </column>
+            <!-- VideoLesson fields -->
+            <column name="url" type="varchar(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="platform" type="varchar(100)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add audit fields to students table -->
+    <changeSet id="4-add-audit-fields-to-students" author="aliaksandr.tsviatkou">
+        <addColumn tableName="students">
+            <column name="created" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add audit fields to courses table -->
+    <changeSet id="5-add-audit-fields-to-courses" author="aliaksandr.tsviatkou">
+        <addColumn tableName="courses">
+            <column name="created" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <!-- Add audit fields to lessons table -->
+    <changeSet id="6-add-audit-fields-to-lessons" author="aliaksandr.tsviatkou">
+        <addColumn tableName="lessons">
+            <column name="created" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_changed_by" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

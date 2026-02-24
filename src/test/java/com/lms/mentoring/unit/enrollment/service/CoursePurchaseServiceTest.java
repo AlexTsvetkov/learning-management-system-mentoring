@@ -1,15 +1,17 @@
-package com.lms.mentoring.enrollment.service;
+package com.lms.mentoring.unit.enrollment.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.course.repository.CourseRepository;
 import com.lms.mentoring.enrollment.dto.PurchaseResult;
+import com.lms.mentoring.enrollment.service.CoursePurchaseService;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.repository.StudentRepository;
 import com.lms.mentoring.util.TestDataGenerator;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 @ExtendWith(MockitoExtension.class)
 class CoursePurchaseServiceTest {
 

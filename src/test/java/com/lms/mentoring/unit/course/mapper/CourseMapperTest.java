@@ -1,13 +1,16 @@
-package com.lms.mentoring.course.mapper;
+package com.lms.mentoring.unit.course.mapper;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
+import com.lms.mentoring.course.mapper.CourseMapper;
 import com.lms.mentoring.util.TestDataGenerator;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 class CourseMapperTest {
 
     private final CourseMapper mapper = Mappers.getMapper(CourseMapper.class);

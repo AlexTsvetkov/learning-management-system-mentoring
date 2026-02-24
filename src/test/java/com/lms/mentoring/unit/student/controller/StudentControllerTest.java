@@ -1,15 +1,21 @@
-package com.lms.mentoring.student.controller;
+package com.lms.mentoring.unit.student.controller;
 
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
+import com.lms.mentoring.student.controller.StudentController;
 import com.lms.mentoring.student.dto.StudentDto;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.service.StudentService;
 import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -26,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 class StudentControllerTest {
 
     private StudentService service;
@@ -42,22 +49,26 @@ class StudentControllerTest {
     }
 
     @Test
-    void all_WhenStudentsExist_ShouldReturnStudentDtoList() {
+    void all_WhenStudentsExist_ShouldReturnStudentDtoPage() {
         // given
         Student student = TestDataGenerator.createDefaultStudent();
         StudentDto dto = TestDataGenerator.createDefaultStudentDto();
         dto.setId(student.getId());
         dto.setFirstName(student.getFirstName());
-        when(service.findAll()).thenReturn(List.of(student));
+        
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Student> studentPage = new PageImpl<>(List.of(student), pageable, 1);
+        
+        when(service.findAll(pageable)).thenReturn(studentPage);
         when(mapper.toDto(student)).thenReturn(dto);
 
         // when
-        List<StudentDto> result = controller.all();
+        Page<StudentDto> result = controller.all(pageable);
 
         // then
-        assertEquals(1, result.size());
-        assertEquals(student.getFirstName(), result.get(0).getFirstName());
-        verify(service, times(1)).findAll();
+        assertEquals(1, result.getTotalElements());
+        assertEquals(student.getFirstName(), result.getContent().get(0).getFirstName());
+        verify(service, times(1)).findAll(pageable);
         verify(mapper, times(1)).toDto(student);
     }
 

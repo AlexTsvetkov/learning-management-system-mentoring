@@ -1,12 +1,19 @@
-package com.lms.mentoring.course.controller;
+package com.lms.mentoring.unit.course.controller;
 
+import com.lms.mentoring.course.controller.CourseController;
 import com.lms.mentoring.course.dto.CourseDto;
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.mapper.CourseMapper;
+import com.lms.mentoring.course.mapper.LessonMapper;
 import com.lms.mentoring.course.service.CourseService;
 import com.lms.mentoring.util.TestDataGenerator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -21,37 +28,43 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Tag("unit")
 class CourseControllerTest {
 
     private CourseService service;
     private CourseMapper mapper;
+    private LessonMapper lessonMapper;
     private CourseController controller;
 
     @BeforeEach
     void setUp() {
         service = mock(CourseService.class);
         mapper = mock(CourseMapper.class);
-        controller = new CourseController(service, mapper);
+        lessonMapper = mock(LessonMapper.class);
+        controller = new CourseController(service, mapper, lessonMapper);
     }
 
     @Test
-    void all_WhenCoursesExist_ShouldReturnCourseDtoList() {
+    void all_WhenCoursesExist_ShouldReturnCourseDtoPage() {
         // given
         Course course = TestDataGenerator.createDefaultCourse();
         CourseDto dto = TestDataGenerator.createDefaultCourseDto();
         dto.setId(course.getId());
         dto.setTitle(course.getTitle());
-        when(service.findAll()).thenReturn(List.of(course));
+        
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Course> coursePage = new PageImpl<>(List.of(course), pageable, 1);
+        
+        when(service.findAll(pageable)).thenReturn(coursePage);
         when(mapper.toDto(course)).thenReturn(dto);
 
         // when
-        List<CourseDto> result = controller.all();
+        Page<CourseDto> result = controller.all(pageable);
 
         // then
-        assertEquals(1, result.size());
-        assertEquals(course.getTitle(), result.get(0).getTitle());
-        verify(service, times(1)).findAll();
-        verify(mapper, times(1)).toDto(course);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(course.getTitle(), result.getContent().get(0).getTitle());
+        verify(service, times(1)).findAll(pageable);
     }
 
     @Test

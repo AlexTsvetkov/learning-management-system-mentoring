@@ -7,6 +7,9 @@ import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.mapper.StudentMapper;
 import com.lms.mentoring.student.service.StudentService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,9 +37,16 @@ public class StudentController {
         this.courseMapper = courseMapper;
     }
 
+    /**
+     * Get all students with pagination support.
+     * 
+     * @param pageable pagination parameters (page, size, sort)
+     *                 Example: /api/v1/students?page=0&size=10&sort=lastName,asc
+     * @return paginated list of students
+     */
     @GetMapping
-    public List<StudentDto> all() {
-        return service.findAll().stream().map(mapper::toDto).collect(Collectors.toList());
+    public Page<StudentDto> all(@PageableDefault(size = 20, sort = "lastName") Pageable pageable) {
+        return service.findAll(pageable).map(mapper::toDto);
     }
 
     @GetMapping("/{id}")

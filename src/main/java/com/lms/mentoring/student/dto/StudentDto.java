@@ -22,5 +22,6 @@ public class StudentDto {
     private String email;
     private LocalDate dateOfBirth;
     private BigDecimal coins;
+    private String locale;
     private List<CourseDto> courses;
 }
