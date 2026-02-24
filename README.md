@@ -13,6 +13,7 @@ tooling, and production-ready configuration.
 | **Framework**   | Spring Boot 3 (MVC, Data JPA, Security, AOP) |
 | **ORM**         | Hibernate / JPA                              |
 | **Database**    | H2 (in-memory), PostgreSQL, SAP HANA         |
+| **Cloud**       | SAP BTP Cloud Foundry, java-cfenv-boot       |
 | **Migration**   | Liquibase                                    |
 | **API Docs**    | Swagger / Springdoc OpenAPI                  |
 | **Templating**  | Mustache                                     |
@@ -180,6 +181,53 @@ Uses Mailtrap (or any SMTP) to send notifications before course start.
 Runs at midnight to:
 Find all courses starting the next day.
 Send email notifications to enrolled students using a custom thread pool.
+
+---
+
+## ☁️ Cloud Foundry Integration (java-cfenv-boot)
+
+The application uses **java-cfenv-boot** for automatic Cloud Foundry service binding configuration.
+
+### What java-cfenv-boot Does
+
+When deployed to SAP BTP Cloud Foundry, bound services inject credentials into the `VCAP_SERVICES` environment variable. java-cfenv-boot automatically:
+
+1. **Parses `VCAP_SERVICES`** - Reads service binding JSON from the environment
+2. **Auto-configures Spring Boot properties** - Maps credentials to `spring.datasource.*`, etc.
+3. **Activates the `cloud` profile** - Automatically when running on Cloud Foundry
+
+### Auto-Configured Services
+
+| Service Type | Spring Boot Properties |
+|--------------|------------------------|
+| SAP HANA | `spring.datasource.url`, `username`, `password`, `driver-class-name` |
+| PostgreSQL | `spring.datasource.url`, `username`, `password` |
+| Other databases | Same pattern |
+
+### Example: Zero-Config Database
+
+Without java-cfenv-boot:
+```yaml
+spring:
+  datasource:
+    url: ${vcap.services.my-hana.credentials.url}
+    username: ${vcap.services.my-hana.credentials.username}
+    password: ${vcap.services.my-hana.credentials.password}
+```
+
+With java-cfenv-boot: **No manual configuration needed!**
+
+The library automatically detects the SAP HANA service binding and configures Spring Boot.
+
+### Local Development
+
+java-cfenv-boot has **no effect** when:
+- Running locally (no `VCAP_SERVICES` environment variable)
+- The environment variable is empty
+
+This allows local H2/PostgreSQL configurations to work seamlessly.
+
+---
 
 ## Maintenance
 Liquibase keeps the schema consistent.
