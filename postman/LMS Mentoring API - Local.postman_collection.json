@@ -1,0 +1,947 @@
+{
+	"info": {
+		"_postman_id": "local-lms-collection-001",
+		"name": "LMS Mentoring API - Local",
+		"description": "Postman collection for Learning Management System (Mentoring Project) - Local Development\n\n## Authentication\n\nThis collection is configured for **local development** with Basic Authentication.\n\n### Available Users\n\n| Username | Password | Roles | Access |\n|----------|----------|-------|--------|\n| user | password | USER | API endpoints |\n| manager | secret | USER, MANAGER | API + Actuator endpoints |\n\n### Environment Variables for Auth\n- `basic_username` / `basic_password` - Standard user credentials\n- `manager_username` / `manager_password` - Manager credentials\n\n### Public Endpoints (No Auth Required)\n- GET /actuator/health\n- GET /actuator/info\n- GET /swagger-ui/**\n- GET /v3/api-docs/**\n- GET /h2-console/**\n\n## Environment Variables\n\nUse with `local` environment:\n- `host`: http://localhost:8080\n- `studentId`: Sample student UUID\n- `courseId`: Sample course UUID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Students",
+			"item": [
+				{
+					"name": "Get All Students",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/students",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students"
+							]
+						},
+						"description": "Returns all students.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student by ID",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Returns a specific student by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Student",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"dateOfBirth\": \"2000-01-01\",\n  \"coins\": 500.00\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/students",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students"
+							]
+						},
+						"description": "Creates a new student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Student",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{studentId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"dateOfBirth\": \"1998-03-15\",\n  \"coins\": 300.00\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Updates an existing student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Student",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students",
+								"{{studentId}}"
+							]
+						},
+						"description": "Deletes a student by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Courses",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/students/{{studentId}}/courses",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students",
+								"{{studentId}}",
+								"courses"
+							]
+						},
+						"description": "Returns all courses for a specific student.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				}
+			],
+			"description": "Student management endpoints."
+		},
+		{
+			"name": "Courses",
+			"item": [
+				{
+					"name": "Get All Courses",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses"
+							]
+						},
+						"description": "Returns all courses.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Course by ID",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Returns a specific course by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Course",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Spring Boot Fundamentals\",\n  \"description\": \"Intro to Spring Boot with REST, JPA, and testing\",\n  \"price\": 99.99,\n  \"coinsPaid\": 10.00,\n  \"startDate\": \"2025-11-10T09:00:00\",\n  \"endDate\": \"2025-12-10T18:00:00\",\n  \"isPublic\": true\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/courses",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses"
+							]
+						},
+						"description": "Creates a new course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Course",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{courseId}}\",\n  \"title\": \"Advanced Spring Boot\",\n  \"description\": \"Deep dive into Spring Boot internals\",\n  \"price\": 150.00,\n  \"coinsPaid\": 15.00,\n  \"startDate\": \"2025-11-12T09:00:00\",\n  \"endDate\": \"2025-12-20T18:00:00\",\n  \"isPublic\": false\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Updates an existing course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Course",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}"
+							]
+						},
+						"description": "Deletes a course by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				}
+			],
+			"description": "Course management endpoints."
+		},
+		{
+			"name": "Course Purchase",
+			"item": [
+				{
+					"name": "Purchase Course",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/enrollments/purchase?studentId={{studentId}}&courseId={{courseId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"enrollments",
+								"purchase"
+							],
+							"query": [
+								{
+									"key": "studentId",
+									"value": "{{studentId}}"
+								},
+								{
+									"key": "courseId",
+									"value": "{{courseId}}"
+								}
+							]
+						},
+						"description": "Purchases a course for a student. Deducts the course price from student's coins.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				}
+			],
+			"description": "Course enrollment/purchase endpoints."
+		},
+		{
+			"name": "Actuator (Public)",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/health",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Returns the health status of the application.\n\n**Auth:** None (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Application Info",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/info",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"info"
+							]
+						},
+						"description": "Returns general information about the application.\n\n**Auth:** None (public endpoint)"
+					},
+					"response": []
+				}
+			],
+			"description": "Public actuator endpoints - no authentication required."
+		},
+		{
+			"name": "Actuator (Manager)",
+			"item": [
+				{
+					"name": "Get All Loggers",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/loggers",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"loggers"
+							]
+						},
+						"description": "Returns all configured loggers and their log levels.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Logger by Name",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/loggers/com.lms.mentoring",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"loggers",
+								"com.lms.mentoring"
+							]
+						},
+						"description": "Returns the log level for a specific logger.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Set Logger Level",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"configuredLevel\": \"DEBUG\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/actuator/loggers/com.lms.mentoring",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"loggers",
+								"com.lms.mentoring"
+							]
+						},
+						"description": "Dynamically changes the log level at runtime.\n\nSupported levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Metrics",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/metrics",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"metrics"
+							]
+						},
+						"description": "Returns available application metrics.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Metric",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/metrics/jvm.memory.used",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"metrics",
+								"jvm.memory.used"
+							]
+						},
+						"description": "Returns a specific metric value.\n\nCommon metrics:\n- jvm.memory.used\n- jvm.memory.max\n- system.cpu.usage\n- http.server.requests\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Environment",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/env",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"env"
+							]
+						},
+						"description": "Returns environment properties.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Beans",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/beans",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"beans"
+							]
+						},
+						"description": "Returns all Spring beans in the application context.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				},
+				{
+					"name": "Caches",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{manager_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{manager_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/actuator/caches",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"actuator",
+								"caches"
+							]
+						},
+						"description": "Returns all caches in the application.\n\n**Auth:** Basic Auth ({{manager_username}}/{{manager_password}}) - Requires MANAGER role"
+					},
+					"response": []
+				}
+			],
+			"description": "Protected actuator endpoints - requires MANAGER role ({{manager_username}}/{{manager_password}})."
+		},
+		{
+			"name": "OpenAPI / Swagger",
+			"item": [
+				{
+					"name": "OpenAPI Spec (JSON)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/v3/api-docs",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"v3",
+								"api-docs"
+							]
+						},
+						"description": "Returns the OpenAPI 3.0 specification in JSON format.\n\n**Auth:** None (public endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Swagger UI",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/swagger-ui/index.html",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"swagger-ui",
+								"index.html"
+							]
+						},
+						"description": "Opens Swagger UI for interactive API documentation.\n\n**Auth:** None (public endpoint)\n\n**Note:** Open this URL in a browser for the full interactive experience."
+					},
+					"response": []
+				}
+			],
+			"description": "OpenAPI/Swagger documentation endpoints - no authentication required."
+		},
+		{
+			"name": "H2 Console",
+			"item": [
+				{
+					"name": "H2 Database Console",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/h2-console",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"h2-console"
+							]
+						},
+						"description": "Opens H2 in-memory database console.\n\n**Auth:** None (public endpoint)\n\n**Connection Settings:**\n- JDBC URL: `jdbc:h2:mem:testdb`\n- Username: `sa`\n- Password: (empty)\n\n**Note:** Open this URL in a browser. Only available when H2 is configured."
+					},
+					"response": []
+				}
+			],
+			"description": "H2 in-memory database console - available in local development."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
