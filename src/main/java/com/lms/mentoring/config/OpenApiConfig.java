@@ -10,18 +10,16 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * OpenAPI/Swagger configuration.
- * 
  * Configures:
  * - API documentation metadata
  * - Basic Authentication security scheme for local development
- * 
  * Access Swagger UI at: http://localhost:8080/swagger-ui/index.html
  */
 @Configuration
 public class OpenApiConfig {
-    
+
     private static final String BASIC_AUTH_SCHEME = "basicAuth";
-    
+
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

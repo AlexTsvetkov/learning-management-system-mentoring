@@ -77,13 +77,100 @@ logging:
 
 ```
 
-## Run the app
+## Run the App
+
+### Default (no profile)
+```bash
 mvn spring-boot:run
+```
 
-## App runs at: http://localhost:8080
+### With Dev Profile (H2 Console enabled)
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
-## Swagger UI
-http://localhost:8080/swagger-ui.html
+App runs at: **http://localhost:8080**
+
+---
+
+## 🔐 Local Development Authentication
+
+For local development, the application uses Basic Authentication with in-memory users:
+
+| Username | Password | Roles | Access |
+|----------|----------|-------|--------|
+| `user` | `password` | USER | API endpoints |
+| `manager` | `secret` | USER, MANAGER | API + Actuator endpoints |
+
+---
+
+## 📖 Swagger UI (API Documentation)
+
+Interactive API documentation is available via Swagger UI.
+
+**URL:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+
+**Alternative URL:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+**OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+### How to Use:
+1. Start the application: `mvn spring-boot:run`
+2. Open [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) in your browser
+3. Click "Authorize" button (lock icon 🔒)
+4. Enter credentials:
+   - Username: `user`
+   - Password: `password`
+5. Click "Authorize" to authenticate
+6. Now you can test all API endpoints directly from the browser
+
+> **Note:** Swagger UI is a public endpoint and doesn't require authentication to view. However, executing API requests requires authentication.
+
+---
+
+## 🗄️ H2 Database Console
+
+The H2 in-memory database console allows you to view and query the database directly in your browser.
+
+**URL:** [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
+
+### Connection Settings:
+| Setting | Value |
+|---------|-------|
+| **JDBC URL** | `jdbc:h2:mem:testdb` |
+| **User Name** | `sa` |
+| **Password** | *(leave empty)* |
+
+### How to Use:
+1. Start the application: `mvn spring-boot:run`
+2. Open [http://localhost:8080/h2-console](http://localhost:8080/h2-console) in your browser
+3. Fill in the connection settings:
+   - **JDBC URL:** `jdbc:h2:mem:testdb`
+   - **User Name:** `sa`
+   - **Password:** *(leave empty)*
+4. Click "Connect"
+5. You can now browse tables and execute SQL queries
+
+> **Note:** H2 Console is only available in local/development mode. It is disabled in cloud/production environments.
+
+---
+
+## 📬 Postman Collections
+
+Postman collections are available in the `postman/` directory:
+
+| File | Description |
+|------|-------------|
+| `LMS Mentoring API - Local.postman_collection.json` | Local development (Basic Auth) |
+| `LMS Mentoring API.postman_collection.json` | Cloud deployment (OAuth2/XSUAA) |
+| `local.postman_environment.json` | Environment variables for local |
+| `cloud.postman_environment.json` | Environment variables for cloud |
+
+### Import into Postman:
+1. Open Postman
+2. Click "Import" → Select files from `postman/` directory
+3. Select the appropriate environment (`local` or `cloud`)
+4. Start testing APIs
 
 ## Email Notifications
 

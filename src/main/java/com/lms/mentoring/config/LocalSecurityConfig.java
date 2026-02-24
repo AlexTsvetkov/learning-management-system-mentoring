@@ -17,10 +17,12 @@ import org.springframework.security.web.SecurityFilterChain;
  * 
  * This configuration is NOT activated when running with the 'cloud' profile.
  * For cloud deployment, see {@link CloudSecurityConfig} which uses XSUAA OAuth2.
+ * 
+ * Active for profiles: default, dev, dev-postgres (any non-cloud profile)
  */
 @Configuration
 @Profile("!cloud")
-public class SecurityConfig {
+public class LocalSecurityConfig {
 
     /**
      * Define an in-memory user store for Basic Auth (local development only).

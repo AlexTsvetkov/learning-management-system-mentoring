@@ -282,7 +282,7 @@
     </build>
 
     <profiles>
-        <!-- DEV: H2 -->
+        <!-- DEV: H2 in-memory database -->
         <profile>
             <id>dev</id>
             <properties>
@@ -290,11 +290,11 @@
             </properties>
         </profile>
 
-        <!-- PROD: PostgreSQL or SAP HANA -->
+        <!-- DEV-POSTGRES: Development with PostgreSQL -->
         <profile>
-            <id>prod</id>
+            <id>dev-postgres</id>
             <properties>
-                <spring.profiles.active>prod</spring.profiles.active>
+                <spring.profiles.active>dev-postgres</spring.profiles.active>
             </properties>
         </profile>
 

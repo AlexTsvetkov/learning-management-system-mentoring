@@ -185,11 +185,11 @@ logging:
     com.lms.mentoring: DEBUG
 
 ---
-# Prod Profile - PostgreSQL
+# Dev PostgreSQL Profile - Development with PostgreSQL
 spring:
   config:
     activate:
-      on-profile: prod
+      on-profile: dev-postgres
   datasource:
     url: jdbc:postgresql://localhost:5432/lms_db
     username: lms_user
