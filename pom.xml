@@ -12,19 +12,37 @@
     <packaging>jar</packaging>
 
     <properties>
+        <!-- Java & Encoding -->
         <java.version>17</java.version>
-        <spring.boot.version>3.5.7</spring.boot.version>
-        <mapstruct.version>1.6.3</mapstruct.version>
-        <lombok.version>1.18.34</lombok.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
-        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+
+        <!-- Spring Boot -->
+        <spring.boot.version>3.5.7</spring.boot.version>
+
+        <!-- Code Generation -->
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok.version>1.18.34</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        <springdoc-openapi-starter-webmvc-ui.version>2.8.14</springdoc-openapi-starter-webmvc-ui.version>
+
+        <!-- API Documentation -->
+        <springdoc-openapi.version>2.8.14</springdoc-openapi.version>
+
+        <!-- SAP Cloud -->
         <sap.cloud.sdk.version>5.18.0</sap.cloud.sdk.version>
+        <sap.xsuaa.version>3.1.2</sap.xsuaa.version>
+        <sap.hana.jdbc.version>2.22.12</sap.hana.jdbc.version>
+
+        <!-- Cloud Foundry -->
+        <java-cfenv.version>3.2.0</java-cfenv.version>
+
+        <!-- Logging -->
         <logback.contrib.version>0.1.5</logback.contrib.version>
+
+        <!-- Maven Plugins -->
+        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -90,12 +108,12 @@
         <dependency>
             <groupId>com.sap.cloud.security.xsuaa</groupId>
             <artifactId>spring-xsuaa</artifactId>
-            <version>3.1.2</version>
+            <version>${sap.xsuaa.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sap.cloud.security.xsuaa</groupId>
             <artifactId>token-client</artifactId>
-            <version>3.1.2</version>
+            <version>${sap.xsuaa.version}</version>
         </dependency>
         
         <!-- OAuth2 Resource Server for JWT validation -->
@@ -126,7 +144,7 @@
         <dependency>
             <groupId>com.sap.cloud.db.jdbc</groupId>
             <artifactId>ngdbc</artifactId>
-            <version>2.22.12</version>
+            <version>${sap.hana.jdbc.version}</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -134,7 +152,7 @@
         <dependency>
             <groupId>io.pivotal.cfenv</groupId>
             <artifactId>java-cfenv-boot</artifactId>
-            <version>3.2.0</version>
+            <version>${java-cfenv.version}</version>
         </dependency>
 
         <!-- SAP Cloud SDK for Destination Service -->
@@ -198,7 +216,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
+            <version>${springdoc-openapi.version}</version>
         </dependency>
 
         <!-- Testing -->
