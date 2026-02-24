@@ -342,6 +342,12 @@
                     <argLine>${failsafeArgLine}</argLine>
                     <!-- Handle class loading issues -->
                     <useSystemClassLoader>false</useSystemClassLoader>
+                    <!-- Fix for Spring Boot repackaged JAR classpath issues -->
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                    <!-- Use test profile for integration tests -->
+                    <systemPropertyVariables>
+                        <spring.profiles.active>test</spring.profiles.active>
+                    </systemPropertyVariables>
                 </configuration>
                 <executions>
                     <execution>

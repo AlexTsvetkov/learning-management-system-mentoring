@@ -1,7 +1,6 @@
-# Spring School Project
+# Learning Management System
 
-A **Spring Boot 3 / Java 21** application for managing students and courses — featuring clean architecture, modern
-tooling, and production-ready configuration.
+A **Spring Boot 3 / Java 21** application for managing students, courses, and lessons — featuring clean architecture, modern tooling, and production-ready configuration.
 
 ---
 
@@ -20,7 +19,7 @@ tooling, and production-ready configuration.
 | **Mapping**     | MapStruct                                    |
 | **Boilerplate** | Lombok                                       |
 | **Scheduler**   | Spring Scheduler + Custom ThreadPoolExecutor |
-| **Testing**     | JUnit 5, Mockito                             |
+| **Testing**     | JUnit 5, Mockito, Jacoco                     |
 
 ---
 
@@ -29,8 +28,14 @@ tooling, and production-ready configuration.
 - Full **CRUD** for Students and Courses
 - **Many-to-Many** relationship: Students ↔ Courses
 - **One-to-One** Course ↔ CourseSettings
-- **One-to-Many** Course ↔ Lessons
+- **One-to-Many** Course ↔ Lessons with **JPA Inheritance**:
+  - `Lesson` (base class)
+  - `ClassroomLesson` (location, capacity)
+  - `VideoLesson` (url, platform)
 - Students can **purchase courses using coins** (balance validation included)
+- **Pagination** support for all GET endpoints
+- **Email localization** with locale field on Student (en, de, ru)
+- **Audit fields** on entities (created, createdBy, lastChanged, lastChangedBy)
 - **Daily scheduled job** to:
     - Identify courses starting tomorrow
     - Send notification emails to enrolled students using a custom thread pool
@@ -40,47 +45,9 @@ tooling, and production-ready configuration.
 
 ---
 
-
----
-
-## ⚙️ Configuration
-
-Default DB is **H2 (in-memory)** for easy local development.
-
-`src/main/resources/application.yml`:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
-  liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-
-logging:
-  level:
-    root: INFO
-
-```
-
 ## Run the App
 
-### Default (no profile)
+### Default (H2 in-memory database)
 ```bash
 mvn spring-boot:run
 ```
@@ -90,7 +57,78 @@ mvn spring-boot:run
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
+### With PostgreSQL (dev-postgres profile)
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev-postgres
+```
+
 App runs at: **http://localhost:8080**
+
+---
+
+## 🐘 PostgreSQL Development Setup
+
+For local development with PostgreSQL, use the `dev-postgres` profile.
+
+### 1. Start PostgreSQL with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+This starts a PostgreSQL 16 container with:
+- **Database:** `lms_db`
+- **Username:** `lms_user`
+- **Password:** `lms_pass` (or empty with trust auth)
+- **Port:** `5432`
+
+### 2. Run Application with PostgreSQL Profile
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=dev-postgres
+```
+
+### 3. Stop PostgreSQL
+
+```bash
+docker-compose down
+```
+
+To also remove the data volume:
+```bash
+docker-compose down -v
+```
+
+### Profile Configuration
+
+The `dev-postgres` profile in `application.yml`:
+
+```yaml
+spring:
+  config:
+    activate:
+      on-profile: dev-postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lms_db
+    username: lms_user
+    password:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+```
+
+---
+
+## ⚙️ Configuration Profiles
+
+| Profile | Database | Use Case |
+|---------|----------|----------|
+| `default` | H2 (in-memory) | Quick local testing |
+| `dev` | H2 (in-memory) | Development with H2 Console |
+| `dev-postgres` | PostgreSQL | Development with persistent database |
+| `cloud` | SAP HANA | SAP BTP Cloud Foundry deployment |
+| `test` | H2 (in-memory) | Unit and integration tests |
 
 ---
 
@@ -143,7 +181,7 @@ The H2 in-memory database console allows you to view and query the database dire
 | **Password** | *(leave empty)* |
 
 ### How to Use:
-1. Start the application: `mvn spring-boot:run`
+1. Start the application: `mvn spring-boot:run -Dspring-boot.run.profiles=dev`
 2. Open [http://localhost:8080/h2-console](http://localhost:8080/h2-console) in your browser
 3. Fill in the connection settings:
    - **JDBC URL:** `jdbc:h2:mem:testdb`
@@ -152,7 +190,7 @@ The H2 in-memory database console allows you to view and query the database dire
 4. Click "Connect"
 5. You can now browse tables and execute SQL queries
 
-> **Note:** H2 Console is only available in local/development mode. It is disabled in cloud/production environments.
+> **Note:** H2 Console is only available with the `dev` profile. It is disabled in cloud/production environments.
 
 ---
 
@@ -173,14 +211,50 @@ Postman collections are available in the `postman/` directory:
 3. Select the appropriate environment (`local` or `cloud`)
 4. Start testing APIs
 
+---
+
+## 🧪 Testing
+
+### Run Unit Tests
+```bash
+mvn test
+```
+
+### Run Integration Tests
+```bash
+mvn verify -DskipUTs
+```
+
+### Run All Tests with Coverage
+```bash
+mvn verify
+```
+
+Coverage reports are generated in:
+- `target/site/jacoco-ut/` - Unit test coverage
+- `target/site/jacoco-it/` - Integration test coverage
+- `target/site/jacoco-merged/` - Merged coverage
+
+---
+
 ## Email Notifications
 
 Uses Mailtrap (or any SMTP) to send notifications before course start.
 
+### Email Localization
+Emails are sent in the student's preferred language based on the `locale` field:
+- `en` - English (default)
+- `de` - German
+- `ru` - Russian
+
+Templates are located in `src/main/resources/templates/email/`.
+
+---
+
 ## Daily Scheduled Job
 Runs at midnight to:
-Find all courses starting the next day.
-Send email notifications to enrolled students using a custom thread pool.
+- Find all courses starting the next day
+- Send email notifications to enrolled students using a custom thread pool
 
 ---
 
@@ -204,21 +278,6 @@ When deployed to SAP BTP Cloud Foundry, bound services inject credentials into t
 | PostgreSQL | `spring.datasource.url`, `username`, `password` |
 | Other databases | Same pattern |
 
-### Example: Zero-Config Database
-
-Without java-cfenv-boot:
-```yaml
-spring:
-  datasource:
-    url: ${vcap.services.my-hana.credentials.url}
-    username: ${vcap.services.my-hana.credentials.username}
-    password: ${vcap.services.my-hana.credentials.password}
-```
-
-With java-cfenv-boot: **No manual configuration needed!**
-
-The library automatically detects the SAP HANA service binding and configures Spring Boot.
-
 ### Local Development
 
 java-cfenv-boot has **no effect** when:
@@ -229,7 +288,14 @@ This allows local H2/PostgreSQL configurations to work seamlessly.
 
 ---
 
+## 🚀 Cloud Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed SAP BTP Cloud Foundry deployment instructions.
+
+---
+
 ## Maintenance
-Liquibase keeps the schema consistent.
-CHANGELOG.md documents project evolution.
-Unit tests cover core business logic and controllers.
+- **Liquibase** keeps the schema consistent
+- **CHANGELOG.md** documents project evolution
+- Unit tests cover core business logic and controllers
+- Integration tests verify repository layer with database
