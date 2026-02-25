@@ -46,7 +46,6 @@ cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
     - .m2/repository/
-    - target/
 
 # Define pipeline stages in execution order
 stages:
