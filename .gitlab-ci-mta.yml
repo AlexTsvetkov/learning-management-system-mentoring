@@ -192,7 +192,8 @@ deploy-dev:
     - "cf services"
   environment:
     name: development
-    url: https://learning-management-system-1.cfapps.us10-001.hana.ondemand.com
+    # Access via Approuter (multitenancy entry point)
+    url: https://lms-approuter.cfapps.us10-001.hana.ondemand.com
   dependencies:
     - mta-build
   only:
@@ -217,7 +218,8 @@ deploy-prod:
     - "cf services"
   environment:
     name: production
-    url: https://learning-management-system.cfapps.us10-001.hana.ondemand.com
+    # Access via Approuter (multitenancy entry point)
+    url: https://lms-approuter.cfapps.us10-001.hana.ondemand.com
   only:
     - main
     - master

@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,10 +23,15 @@ import org.springframework.security.web.SecurityFilterChain;
  * Uses XSUAA service for OAuth2/JWT token-based authentication.
  * 
  * This configuration is activated only when running with the 'cloud' profile.
- * All authenticated users (with a valid JWT token) can access the API endpoints.
+ * 
+ * Security roles:
+ * - user: Basic access to API endpoints
+ * - admin: Access to /api/v1/application-info endpoint
+ * - Callback: SaaS Provisioning Service callback access
  */
 @Configuration
 @Profile("cloud")
+@EnableMethodSecurity(prePostEnabled = true)
 public class CloudSecurityConfig {
 
     @Value("${vcap.services.lms-xsuaa.credentials.url:}")
@@ -78,8 +84,15 @@ public class CloudSecurityConfig {
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         
-                        // All API endpoints require authentication (any valid token)
-                        .requestMatchers("/api/**").authenticated()
+                        // SaaS Provisioning Service callback endpoints - require Callback scope
+                        // These endpoints are called by SAP BTP SaaS Provisioning Service
+                        .requestMatchers("/callback/v1.0/**").hasAuthority("Callback")
+                        
+                        // Application info endpoint - requires admin scope (enforced via @PreAuthorize)
+                        .requestMatchers("/api/v1/application-info/**").authenticated()
+                        
+                        // All other API endpoints require user scope
+                        .requestMatchers("/api/**").hasAuthority("user")
                         
                         // Actuator endpoints require authentication
                         .requestMatchers("/actuator/**").authenticated()

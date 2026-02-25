@@ -1,7 +1,7 @@
 _schema-version: "3.2"
 ID: learning-management-system
 version: 0.1.0
-description: Learning Management System - Spring Boot application with CRUD, scheduling, email, and coin-based payments
+description: Learning Management System - Multi-tenant Spring Boot application with CRUD, scheduling, email, and coin-based payments
 
 parameters:
   enable-parallel-deployments: true
@@ -13,6 +13,32 @@ build-parameters:
         - echo "Using pre-built JAR. Run 'mvn clean package -P cloud -DskipTests' before 'mbt build' if needed."
 
 modules:
+  # Approuter Module - Entry point for all requests
+  - name: lms-approuter
+    type: approuter.nodejs
+    path: approuter
+    build-parameters:
+      builder: npm
+    parameters:
+      memory: 256M
+      disk-quota: 256M
+      instances: 1
+    properties:
+      TENANT_HOST_PATTERN: "^(.*)-lms-approuter.cfapps.us10-001.hana.ondemand.com"
+    provides:
+      - name: lms-approuter-url
+        properties:
+          url: ${default-url}
+    requires:
+      - name: lms-xsuaa
+      - name: lms-api
+        group: destinations
+        properties:
+          name: lms-backend
+          url: ~{url}
+          forwardAuthToken: true
+
+  # Backend Java Application
   - name: learning-management-system
     type: java
     path: .
@@ -32,6 +58,7 @@ modules:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
       JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
       SPRING_PROFILES_ACTIVE: cloud
+      APPROUTER_URL: ~{lms-approuter-url/url}
     provides:
       - name: lms-api
         properties:
@@ -44,6 +71,8 @@ modules:
       - name: lms-application-logging
       - name: lms-application-autoscaler
       - name: lms-smtp-credentials
+      - name: lms-saas-registry
+      - name: lms-approuter-url
 
 resources:
   # SAP HANA Cloud Database
@@ -54,7 +83,7 @@ resources:
       service-plan: hana-free
       service-name: lms-hana-db
 
-  # XSUAA Service (OAuth2 Authentication)
+  # XSUAA Service (OAuth2 Authentication) - Shared tenant mode for multitenancy
   - name: lms-xsuaa
     type: org.cloudfoundry.managed-service
     parameters:
@@ -62,6 +91,27 @@ resources:
       service-plan: application
       service-name: lms-xsuaa
       path: xs-security.json
+
+  # SaaS Provisioning Service - For marketplace registration and tenant subscription
+  - name: lms-saas-registry
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: saas-registry
+      service-plan: application
+      service-name: lms-saas-registry
+      config:
+        xsappname: learning-management-system
+        appName: learning-management-system
+        displayName: Learning Management System
+        description: LMS - A multi-tenant learning management system for course management
+        category: Education
+        appUrls:
+          getDependencies: ~{lms-api/url}/callback/v1.0/dependencies
+          onSubscription: ~{lms-api/url}/callback/v1.0/tenants/{tenantId}
+          onSubscriptionAsync: false
+          onUnSubscriptionAsync: false
+    requires:
+      - name: lms-api
 
   # Destination Service
   - name: lms-destination

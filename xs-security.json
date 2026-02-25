@@ -1,19 +1,37 @@
 {
   "xsappname": "learning-management-system",
-  "tenant-mode": "dedicated",
-  "description": "Learning Management System - OAuth2 Security Configuration",
+  "tenant-mode": "shared",
+  "description": "Learning Management System - OAuth2 Security Configuration with Multitenancy Support",
   "scopes": [
     {
       "name": "$XSAPPNAME.user",
       "description": "Basic user access"
+    },
+    {
+      "name": "$XSAPPNAME.admin",
+      "description": "Administrator access"
+    },
+    {
+      "name": "$XSAPPNAME.Callback",
+      "description": "Callback scope for SaaS Provisioning Service",
+      "grant-as-authority-to-apps": ["$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"]
     }
   ],
+  "attributes": [],
   "role-templates": [
     {
       "name": "User",
       "description": "Standard user with access to the application",
       "scope-references": [
         "$XSAPPNAME.user"
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Administrator with full access including application info",
+      "scope-references": [
+        "$XSAPPNAME.user",
+        "$XSAPPNAME.admin"
       ]
     }
   ],
@@ -23,6 +41,13 @@
       "description": "LMS Application Users",
       "role-template-references": [
         "$XSAPPNAME.User"
+      ]
+    },
+    {
+      "name": "LMS_Admin",
+      "description": "LMS Application Administrators",
+      "role-template-references": [
+        "$XSAPPNAME.Admin"
       ]
     }
   ],

@@ -1,0 +1,13 @@
+{
+  "xsappname": "learning-management-system",
+  "appName": "learning-management-system",
+  "displayName": "Learning Management System",
+  "description": "LMS - A multi-tenant learning management system for course management",
+  "category": "Education",
+  "appUrls": {
+    "getDependencies": "~{lms-api/url}/callback/v1.0/dependencies",
+    "onSubscription": "~{lms-api/url}/callback/v1.0/tenants/{tenantId}",
+    "onSubscriptionAsync": false,
+    "onUnSubscriptionAsync": false
+  }
+}

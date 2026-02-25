@@ -17,6 +17,7 @@ FEATURE_FLAGS_SERVICE_NAME="lms-feature-flags"
 FEATURE_FLAGS_KEY_NAME="lms-feature-flags-key"
 SMTP_USER_PROVIDED_SERVICE_NAME="lms-smtp-credentials"
 XSUAA_SERVICE_NAME="lms-xsuaa"
+SAAS_REGISTRY_SERVICE_NAME="lms-saas-registry"
 
 # Function to extract JSON from cf service-key output
 extract_service_key_json() {
@@ -233,9 +234,26 @@ else
     fi
 fi
 
-# 7. User-Provided Service for SMTP Credentials
+# 7. SaaS Provisioning Service (SaaS Registry)
 echo ""
-echo "[7/7] User-Provided SMTP Credentials Service"
+echo "[7/8] SaaS Registry Service (Multitenancy)"
+# Create SaaS Registry service for marketplace registration
+if cf service "$SAAS_REGISTRY_SERVICE_NAME" &> /dev/null; then
+    echo "✓ Service '$SAAS_REGISTRY_SERVICE_NAME' already exists"
+else
+    echo "Creating service '$SAAS_REGISTRY_SERVICE_NAME' (saas-registry - application)..."
+    if [ -f "saas-provisioning.json" ]; then
+        cf create-service saas-registry application "$SAAS_REGISTRY_SERVICE_NAME" -c saas-provisioning.json
+        echo "✓ Service '$SAAS_REGISTRY_SERVICE_NAME' created"
+    else
+        echo "⚠ saas-provisioning.json not found. Skipping SaaS Registry service."
+        echo "  Create saas-provisioning.json to enable multitenancy features."
+    fi
+fi
+
+# 8. User-Provided Service for SMTP Credentials
+echo ""
+echo "[8/8] User-Provided SMTP Credentials Service"
 # SMTP credentials for Mailtrap
 SMTP_CREDENTIALS='{
   "host": "sandbox.smtp.mailtrap.io",
@@ -275,3 +293,10 @@ echo "IMPORTANT: To access the API, you need to:"
 echo "  1. Assign the 'LMS_User' role collection to your user in SAP BTP Cockpit"
 echo "  2. Go to: Security → Trust Configuration → Your IDP → Assign Role Collection"
 echo "  3. Get an OAuth2 token from XSUAA to make authenticated API requests"
+echo ""
+echo "For ADMIN access (application-info endpoint):"
+echo "  - Assign the 'LMS_Admin' role collection to your user"
+echo ""
+echo "For Multitenancy:"
+echo "  - The SaaS Registry service enables subscription from other subaccounts"
+echo "  - Create a subscriber subaccount and subscribe via BTP Cockpit"

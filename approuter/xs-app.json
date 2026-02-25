@@ -1,0 +1,32 @@
+{
+  "welcomeFile": "/api/v1/application-info",
+  "authenticationMethod": "route",
+  "sessionTimeout": 30,
+  "routes": [
+    {
+      "source": "^/api/(.*)$",
+      "target": "/api/$1",
+      "destination": "lms-backend",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/actuator/(.*)$",
+      "target": "/actuator/$1",
+      "destination": "lms-backend",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/swagger-ui/(.*)$",
+      "target": "/swagger-ui/$1",
+      "destination": "lms-backend",
+      "authenticationType": "none"
+    },
+    {
+      "source": "^/v3/api-docs(.*)$",
+      "target": "/v3/api-docs$1",
+      "destination": "lms-backend",
+      "authenticationType": "none"
+    }
+  ]
+}
