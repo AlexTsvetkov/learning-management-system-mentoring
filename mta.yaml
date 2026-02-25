@@ -106,6 +106,6 @@ resources:
       config:
         host: sandbox.smtp.mailtrap.io
         port: "2525"
-        username: "0d4c2be927fce4",
-        password: "ff941ef75b43cf",
+        username: "0d4c2be927fce4"
+        password: "ff941ef75b43cf"
         from: no-reply@lms.example.com

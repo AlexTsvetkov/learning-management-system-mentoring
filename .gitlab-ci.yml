@@ -1,23 +1,23 @@
 # GitLab CI/CD Pipeline for Learning Management System
-# Spring Boot application with SAP BTP Cloud Foundry deployment
+# Spring Boot application with SAP BTP Cloud Foundry MTA deployment
 #
 # Pipeline stages:
-# 1. Build: Compile and package the application
+# 1. Build: Compile and package the application with Maven
 # 2. Test: Run unit tests
-# 3. Deploy: Deploy to SAP BTP Cloud Foundry
+# 3. Package: Build MTA archive
+# 4. Deploy: Deploy to SAP BTP Cloud Foundry using MTA
 #
-# Runner tags: java, maven, spring-boot, docker
+# Runner tags: docker
 
-image: maven:3.9.6-eclipse-temurin-17
+image: maven:3.9.9-eclipse-temurin-17
 
 variables:
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
-  # Disable interactive mode for Maven
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
-  # Application artifact name
-  ARTIFACT_NAME: "learning-management-system-0.1.0.jar"
+  # MTA archive name
+  MTA_ARCHIVE: "learning-management-system_0.1.0.mtar"
 
-# Default tags for all jobs - use our project runner
+# Default tags for all jobs
 default:
   tags:
     - docker
@@ -32,14 +32,15 @@ cache:
 stages:
   - build
   - test
+  - package
   - deploy
 
 # ==================== BUILD STAGE ====================
 build:
   stage: build
   script:
-    - echo "Building Spring Boot application..."
-    - mvn $MAVEN_CLI_OPTS clean package -DskipTests
+    - echo "Building Spring Boot application with Java 17..."
+    - mvn $MAVEN_CLI_OPTS clean package -P cloud -DskipTests
     - echo "Build completed successfully"
   artifacts:
     paths:
@@ -65,6 +66,7 @@ test:
         - target/surefire-reports/TEST-*.xml
     paths:
       - target/surefire-reports/
+      - target/site/jacoco-ut/
     expire_in: 1 week
   only:
     - main
@@ -72,43 +74,69 @@ test:
     - develop
     - merge_requests
 
+# ==================== PACKAGE STAGE ====================
+# Build MTA archive using Cloud MTA Build Tool
+mta-build:
+  stage: package
+  image: devxci/mbtci:latest
+  script:
+    - echo "Building MTA archive..."
+    - mbt build --mtar ${MTA_ARCHIVE}
+    - echo "MTA archive created: mta_archives/${MTA_ARCHIVE}"
+    - ls -la mta_archives/
+  artifacts:
+    paths:
+      - mta_archives/*.mtar
+    expire_in: 1 week
+  dependencies:
+    - build
+  only:
+    - main
+    - master
+
 # ==================== DEPLOY STAGE ====================
-# Deploy to SAP BTP Cloud Foundry (dev environment)
+# Deploy to SAP BTP Cloud Foundry (dev environment) using MTA
 deploy-dev:
   stage: deploy
-  image: governmentpaas/cf-cli:latest
+  image: devxci/mbtci:latest
   before_script:
-    - echo "Preparing Cloud Foundry deployment..."
+    - echo "Preparing MTA deployment to SAP BTP Cloud Foundry..."
   script:
     - echo "Logging into SAP BTP Cloud Foundry..."
     - cf login -a "$CF_API" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE"
-    - echo "Deploying application to Cloud Foundry..."
-    - cf push -f manifest.yaml
-    - echo "Deployment completed successfully"
+    - echo "Deploying MTA archive to Cloud Foundry..."
+    - cf deploy mta_archives/${MTA_ARCHIVE} --retries 3
+    - echo "MTA deployment completed successfully"
     - cf apps
+    - cf services
   environment:
     name: development
     url: https://learning-management-system-1.cfapps.us10-001.hana.ondemand.com
+  dependencies:
+    - mta-build
   only:
     - main
     - master
   when: manual
   allow_failure: false
 
-# Deploy to production (with approval)
+# Deploy to production using MTA (with approval)
 deploy-prod:
   stage: deploy
-  image: governmentpaas/cf-cli:latest
+  image: devxci/mbtci:latest
   script:
     - echo "Logging into SAP BTP Cloud Foundry (Production)..."
     - cf login -a "$CF_API_PROD" -u "$CF_USERNAME_PROD" -p "$CF_PASSWORD_PROD" -o "$CF_ORG_PROD" -s "$CF_SPACE_PROD"
-    - echo "Deploying application to Production..."
-    - cf push -f manifest.yaml
-    - echo "Production deployment completed"
+    - echo "Deploying MTA archive to Production..."
+    - cf deploy mta_archives/${MTA_ARCHIVE} --retries 3
+    - echo "Production MTA deployment completed"
     - cf apps
+    - cf services
   environment:
     name: production
     url: https://learning-management-system.cfapps.us10-001.hana.ondemand.com
+  dependencies:
+    - mta-build
   only:
     - main
     - master
@@ -140,3 +168,42 @@ dependency-check:
     - main
     - master
     - schedules
+
+# Integration tests (optional)
+integration-test:
+  stage: test
+  script:
+    - echo "Running integration tests..."
+    - mvn $MAVEN_CLI_OPTS verify -DskipUnitTests
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/failsafe-reports/TEST-*.xml
+    paths:
+      - target/failsafe-reports/
+      - target/site/jacoco-it/
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - main
+    - master
+
+# Undeploy MTA (cleanup job)
+undeploy:
+  stage: deploy
+  image: devxci/mbtci:latest
+  script:
+    - echo "Logging into SAP BTP Cloud Foundry..."
+    - cf login -a "$CF_API" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE"
+    - echo "Undeploying MTA..."
+    - cf undeploy learning-management-system --delete-services --delete-service-keys -f || true
+    - echo "MTA undeployment completed"
+  environment:
+    name: development
+    action: stop
+  when: manual
+  allow_failure: true
+  only:
+    - main
+    - master
