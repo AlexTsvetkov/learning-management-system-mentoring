@@ -3,7 +3,6 @@ package com.lms.mentoring.config;
 import com.sap.cloud.security.xsuaa.XsuaaServiceConfiguration;
 import com.sap.cloud.security.xsuaa.XsuaaServiceConfigurationDefault;
 import com.sap.cloud.security.xsuaa.token.TokenAuthenticationConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -28,46 +27,38 @@ import org.springframework.security.web.SecurityFilterChain;
  * - user: Basic access to API endpoints
  * - admin: Access to /api/v1/application-info endpoint
  * - Callback: SaaS Provisioning Service callback access
+ * 
+ * For SaaS multitenancy:
+ * - XSUAA must use 'broker' plan
+ * - Callback scope is granted to SaaS Provisioning Service via grant-as-authority-to-apps
  */
 @Configuration
 @Profile("cloud")
 @EnableMethodSecurity(prePostEnabled = true)
 public class CloudSecurityConfig {
 
-    @Value("${vcap.services.lms-xsuaa.credentials.url:}")
-    private String xsuaaUrl;
-
-    @Value("${vcap.services.lms-xsuaa.credentials.clientid:}")
-    private String clientId;
-
-    @Value("${vcap.services.lms-xsuaa.credentials.clientsecret:}")
-    private String clientSecret;
-
-    @Value("${vcap.services.lms-xsuaa.credentials.xsappname:}")
-    private String xsAppName;
-
     /**
-     * Creates the XsuaaServiceConfiguration bean from VCAP_SERVICES.
+     * Creates XsuaaServiceConfiguration bean that reads XSUAA credentials from VCAP_SERVICES.
+     * This is automatically populated when running on Cloud Foundry.
      */
     @Bean
     public XsuaaServiceConfiguration xsuaaServiceConfiguration() {
-        XsuaaServiceConfigurationDefault config = new XsuaaServiceConfigurationDefault();
-        // The configuration is automatically populated from VCAP_SERVICES
-        // via the spring-xsuaa library
-        return config;
+        return new XsuaaServiceConfigurationDefault();
     }
 
     /**
      * JWT Decoder for validating XSUAA tokens.
+     * Uses the XSUAA service configuration to get the JWK set URI.
      */
     @Bean
-    public JwtDecoder jwtDecoder() {
-        String jwkSetUri = xsuaaUrl + "/token_keys";
+    public JwtDecoder jwtDecoder(XsuaaServiceConfiguration xsuaaServiceConfiguration) {
+        String jwkSetUri = xsuaaServiceConfiguration.getUaaUrl() + "/token_keys";
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
     @Bean
-    public SecurityFilterChain cloudSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain cloudSecurityFilterChain(HttpSecurity http, 
+                                                         XsuaaServiceConfiguration xsuaaServiceConfiguration) throws Exception {
         http
                 // Stateless session management for JWT
                 .sessionManagement(session ->
@@ -104,8 +95,8 @@ public class CloudSecurityConfig {
                 // Configure OAuth2 Resource Server with JWT
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
-                                .decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(getJwtAuthenticationConverter())
+                                .decoder(jwtDecoder(xsuaaServiceConfiguration))
+                                .jwtAuthenticationConverter(getJwtAuthenticationConverter(xsuaaServiceConfiguration))
                         )
                 );
 
@@ -116,8 +107,9 @@ public class CloudSecurityConfig {
      * Creates a converter that extracts authorities from the XSUAA JWT token.
      * This allows Spring Security to use the scopes from the token for authorization.
      */
-    private Converter<Jwt, AbstractAuthenticationToken> getJwtAuthenticationConverter() {
-        TokenAuthenticationConverter converter = new TokenAuthenticationConverter(xsuaaServiceConfiguration());
+    private Converter<Jwt, AbstractAuthenticationToken> getJwtAuthenticationConverter(
+            XsuaaServiceConfiguration xsuaaServiceConfiguration) {
+        TokenAuthenticationConverter converter = new TokenAuthenticationConverter(xsuaaServiceConfiguration);
         // Extract authorities from scopes claim
         converter.setLocalScopeAsAuthorities(true);
         return converter;

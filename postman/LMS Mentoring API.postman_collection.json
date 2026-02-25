@@ -151,9 +151,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/callback/v1.0/dependencies",
+							"raw": "{{backend_host}}/callback/v1.0/dependencies",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"callback",
@@ -161,7 +161,7 @@
 								"dependencies"
 							]
 						},
-						"description": "Returns the list of service dependencies required for tenant subscription.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope (granted to SaaS provisioning service).\n\n**Response:**\n```json\n[\n  {\n    \"xsappname\": \"learning-management-system\"\n  }\n]\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service, not by end users."
+						"description": "Returns the list of service dependencies required for tenant subscription.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope (granted to SaaS provisioning service).\n\n**Target:** Backend directly (not through Approuter) - SaaS Registry calls this URL.\n\n**Response:**\n```json\n[\n  {\n    \"xsappname\": \"learning-management-system\"\n  }\n]\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service, not by end users."
 					},
 					"response": []
 				},
@@ -190,9 +190,9 @@
 							"raw": "{\n  \"subscribedSubdomain\": \"tenant-subdomain\",\n  \"subscribedTenantId\": \"tenant-guid\",\n  \"eventType\": \"CREATE\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/callback/v1.0/tenants/{{tenantId}}",
+							"raw": "{{backend_host}}/callback/v1.0/tenants/{{tenantId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"callback",
@@ -201,7 +201,7 @@
 								"{{tenantId}}"
 							]
 						},
-						"description": "Handles tenant subscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\n**Request Body (from SaaS Registry):**\n```json\n{\n  \"subscribedSubdomain\": \"subscriber-subaccount\",\n  \"subscribedTenantId\": \"tenant-guid\",\n  \"eventType\": \"CREATE\"\n}\n```\n\n**Response:** Returns tenant-specific Approuter URL:\n```\nhttps://subscriber-subaccount-lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during subscription flow."
+						"description": "Handles tenant subscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\n**Target:** Backend directly (not through Approuter) - SaaS Registry calls this URL.\n\n**Request Body (from SaaS Registry):**\n```json\n{\n  \"subscribedSubdomain\": \"subscriber-subaccount\",\n  \"subscribedTenantId\": \"tenant-guid\",\n  \"eventType\": \"CREATE\"\n}\n```\n\n**Response:** Returns tenant-specific Approuter URL:\n```\nhttps://subscriber-subaccount-lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during subscription flow."
 					},
 					"response": []
 				},
@@ -221,9 +221,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/callback/v1.0/tenants/{{tenantId}}",
+							"raw": "{{backend_host}}/callback/v1.0/tenants/{{tenantId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"callback",
@@ -232,7 +232,7 @@
 								"{{tenantId}}"
 							]
 						},
-						"description": "Handles tenant unsubscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\nThis endpoint:\n1. Cleans up tenant-specific data (if any)\n2. Removes tenant-specific configurations\n3. Returns 200 OK on success\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during unsubscription flow."
+						"description": "Handles tenant unsubscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\n**Target:** Backend directly (not through Approuter) - SaaS Registry calls this URL.\n\nThis endpoint:\n1. Cleans up tenant-specific data (if any)\n2. Removes tenant-specific configurations\n3. Returns 200 OK on success\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during unsubscription flow."
 					},
 					"response": []
 				}

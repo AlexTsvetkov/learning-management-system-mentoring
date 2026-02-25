@@ -83,12 +83,13 @@ resources:
       service-plan: hana-free
       service-name: lms-hana-db
 
-  # XSUAA Service (OAuth2 Authentication) - Shared tenant mode for multitenancy
+  # XSUAA Service (OAuth2 Authentication) - Broker plan for SaaS multitenancy
+  # IMPORTANT: Must use 'broker' plan for multitenant SaaS applications
   - name: lms-xsuaa
     type: org.cloudfoundry.managed-service
     parameters:
       service: xsuaa
-      service-plan: application
+      service-plan: broker
       service-name: lms-xsuaa
       path: xs-security.json
 
