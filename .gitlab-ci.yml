@@ -219,15 +219,15 @@ deploy-prod:
   environment:
     name: production
     url: https://learning-management-system.cfapps.us10-001.hana.ondemand.com
-  dependencies:
-    - mta-build
   only:
     - main
     - master
   when: manual
   allow_failure: false
   needs:
-    - deploy-dev
+    - job: mta-build
+      artifacts: true
+    - job: deploy-dev
 
 # =============================================================================
 # CLEANUP / UTILITY JOBS
