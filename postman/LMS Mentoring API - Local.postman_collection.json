@@ -581,7 +581,222 @@
 								"lessons"
 							]
 						},
-						"description": "Returns all lessons for a specific course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Lesson Types:**\n- `BASIC`: Standard lesson with title and duration\n- `CLASSROOM`: In-person lesson with location and capacity\n- `VIDEO`: Online lesson with URL and platform\n\n**Response Example:**\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Java Basics\",\n    \"duration\": 45,\n    \"lessonType\": \"BASIC\"\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Live Workshop\",\n    \"duration\": 90,\n    \"lessonType\": \"CLASSROOM\",\n    \"location\": \"Room A101\",\n    \"capacity\": 30\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Video Tutorial\",\n    \"duration\": 35,\n    \"lessonType\": \"VIDEO\",\n    \"url\": \"https://youtube.com/...\",\n    \"platform\": \"YouTube\"\n  }\n]\n```"
+						"description": "Returns all lessons for a specific course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Lesson Types:**\n- `CLASSROOM`: In-person lesson with location and capacity\n- `VIDEO`: Online lesson with URL and platform\n\n**Response Example:**\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Live Workshop\",\n    \"duration\": 90,\n    \"lessonType\": \"CLASSROOM\",\n    \"location\": \"Room A101\",\n    \"capacity\": 30\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Video Tutorial\",\n    \"duration\": 35,\n    \"lessonType\": \"VIDEO\",\n    \"url\": \"https://youtube.com/...\",\n    \"platform\": \"YouTube\"\n  }\n]\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Lesson by ID",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons",
+								"{{lessonId}}"
+							]
+						},
+						"description": "Returns a specific lesson by ID.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Video Lesson",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Introduction to Spring Boot\",\n  \"duration\": 45,\n  \"lessonType\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=example123\",\n  \"platform\": \"YouTube\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons"
+							]
+						},
+						"description": "Creates a new VIDEO lesson for a course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Required Fields:**\n- `title`: Lesson title\n- `duration`: Duration in minutes\n- `lessonType`: Must be `VIDEO`\n- `url`: Video URL\n- `platform`: Video platform (YouTube, Vimeo, Udemy, etc.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Classroom Lesson",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Hands-on Workshop\",\n  \"duration\": 120,\n  \"lessonType\": \"CLASSROOM\",\n  \"location\": \"Room B202, Training Center\",\n  \"capacity\": 25\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons"
+							]
+						},
+						"description": "Creates a new CLASSROOM lesson for a course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Required Fields:**\n- `title`: Lesson title\n- `duration`: Duration in minutes\n- `lessonType`: Must be `CLASSROOM`\n- `location`: Physical location/room\n- `capacity`: Maximum number of attendees"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Lesson",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Video Tutorial\",\n  \"duration\": 60,\n  \"lessonType\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=updated123\",\n  \"platform\": \"YouTube\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons",
+								"{{lessonId}}"
+							]
+						},
+						"description": "Updates an existing lesson.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})\n\n**Note:** The lesson type cannot be changed. Update fields according to the existing lesson type (VIDEO or CLASSROOM)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Lesson",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{basic_username}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{basic_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses",
+								"{{courseId}}",
+								"lessons",
+								"{{lessonId}}"
+							]
+						},
+						"description": "Deletes a lesson from a course.\n\n**Auth:** Basic Auth ({{basic_username}}/{{basic_password}})"
 					},
 					"response": []
 				}
