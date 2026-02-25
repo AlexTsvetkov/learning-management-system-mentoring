@@ -2,6 +2,7 @@ package com.lms.mentoring.unit.course.service;
 
 import com.lms.mentoring.course.entity.Course;
 import com.lms.mentoring.course.repository.CourseRepository;
+import com.lms.mentoring.course.repository.LessonRepository;
 import com.lms.mentoring.course.service.CourseService;
 import com.lms.mentoring.student.entity.Student;
 import com.lms.mentoring.student.repository.StudentRepository;
@@ -28,13 +29,15 @@ class CourseServiceTest {
 
     private CourseRepository repo;
     private StudentRepository studentRepo;
+    private LessonRepository lessonRepo;
     private CourseService service;
 
     @BeforeEach
     void setUp() {
         repo = Mockito.mock(CourseRepository.class);
         studentRepo = Mockito.mock(StudentRepository.class);
-        service = new CourseService(repo, studentRepo);
+        lessonRepo = Mockito.mock(LessonRepository.class);
+        service = new CourseService(repo, studentRepo, lessonRepo);
     }
 
     @Test
