@@ -3,7 +3,6 @@ package com.lms.mentoring.course.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;
-import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
@@ -33,7 +32,6 @@ import java.util.UUID;
 @Table(name = "lessons")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "lesson_type", discriminatorType = DiscriminatorType.STRING)
-@DiscriminatorValue("BASIC")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
@@ -42,7 +40,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class Lesson {
+public abstract class Lesson {
     @Id
     @EqualsAndHashCode.Include
     private UUID id;
