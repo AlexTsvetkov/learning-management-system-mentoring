@@ -42,6 +42,11 @@ A **Spring Boot 3 / Java 21** application for managing students, courses, and le
 - **REST API documentation** via Swagger
 - **Liquibase**-based schema versioning
 - **Spring Boot Actuator** for health and info endpoints
+- **SAP BTP Multitenancy** support:
+  - Approuter for centralized entry point and tenant routing
+  - SaaS Provisioning Service for marketplace registration
+  - Tenant subscription/unsubscription callbacks
+  - Role-based access control (User, Admin roles)
 
 ---
 
@@ -140,6 +145,68 @@ For local development, the application uses Basic Authentication with in-memory 
 |----------|----------|-------|--------|
 | `user` | `password` | USER | API endpoints |
 | `manager` | `secret` | USER, MANAGER | API + Actuator endpoints |
+
+---
+
+## 🏢 SAP BTP Multitenancy
+
+The application supports SAP BTP multitenancy with provider/subscriber model.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SAP BTP Subaccount (Provider)                │
+│                                                                 │
+│  ┌─────────────┐    ┌──────────────────────────────────────┐   │
+│  │ Approuter   │───▶│ Learning Management System (Backend) │   │
+│  │(Entry Point)│    │                                      │   │
+│  └─────────────┘    │  - /api/v1/* (requires 'user' scope) │   │
+│        │            │  - /api/v1/application-info (admin)  │   │
+│        │            │  - /callback/v1.0/* (SaaS callbacks) │   │
+│        ▼            └──────────────────────────────────────┘   │
+│  ┌─────────────┐                     │                         │
+│  │   XSUAA     │◀────────────────────┘                         │
+│  │ (shared)    │                                               │
+│  └─────────────┘                                               │
+│        │                                                       │
+│        ▼                                                       │
+│  ┌─────────────┐                                               │
+│  │SaaS Registry│                                               │
+│  │(Marketplace)│                                               │
+│  └─────────────┘                                               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+            ┌─────────────────┼─────────────────┐
+            ▼                 ▼                 ▼
+    ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+    │ Subscriber 1  │ │ Subscriber 2  │ │ Subscriber N  │
+    │  Subaccount   │ │  Subaccount   │ │  Subaccount   │
+    └───────────────┘ └───────────────┘ └───────────────┘
+```
+
+### Role Collections
+
+| Role Collection | Scopes | Access |
+|-----------------|--------|--------|
+| `LMS_User` | `user` | Standard API access |
+| `LMS_Admin` | `user`, `admin` | API + Application Info endpoint |
+
+### Tenant-Specific URLs
+
+After subscription, each tenant accesses the app via:
+```
+https://{tenant-subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com
+```
+
+### Multitenancy Endpoints
+
+| Endpoint | Method | Access | Description |
+|----------|--------|--------|-------------|
+| `/api/v1/application-info` | GET | ADMIN | XSUAA credentials (tokenUrl, clientId, etc.) |
+| `/callback/v1.0/dependencies` | GET | SaaS Service | Service dependencies |
+| `/callback/v1.0/tenants/{tenantId}` | PUT | SaaS Service | Subscription callback |
+| `/callback/v1.0/tenants/{tenantId}` | DELETE | SaaS Service | Unsubscription callback |
 
 ---
 

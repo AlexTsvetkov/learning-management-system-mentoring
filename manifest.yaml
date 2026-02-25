@@ -1,5 +1,32 @@
 ---
 applications:
+  # Approuter - Entry point for multitenancy
+  - name: lms-approuter
+    memory: 256M
+    disk_quota: 256M
+    instances: 1
+    buildpacks:
+      - nodejs_buildpack
+    path: approuter
+    env:
+      TENANT_HOST_PATTERN: "^(.*)-lms-approuter.cfapps.us10-001.hana.ondemand.com"
+      destinations: >
+        [
+          {
+            "name": "lms-backend",
+            "url": "https://learning-management-system-1.cfapps.us10-001.hana.ondemand.com",
+            "forwardAuthToken": true
+          }
+        ]
+    routes:
+      - route: lms-approuter.cfapps.us10-001.hana.ondemand.com
+    services:
+      - lms-xsuaa
+    health-check-type: http
+    health-check-http-endpoint: /
+    timeout: 60
+
+  # Backend Java Application
   - name: learning-management-system
     memory: 1024M
     disk_quota: 512M
@@ -11,6 +38,7 @@ applications:
       JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 17.+ } }'
       SPRING_PROFILES_ACTIVE: cloud
       JBP_CONFIG_COMPONENTS: '{ jres: ["com.sap.xs.java.buildpack.jre.SAPMachineJRE"] }'
+      APPROUTER_URL: https://lms-approuter.cfapps.us10-001.hana.ondemand.com
       # Remote Debug Configuration - Enable via 'cf set-env learning-management-system JBP_CONFIG_DEBUG "enabled: true"'
       # Then restart app and use 'cf ssh -N -T -L 8000:localhost:8000 learning-management-system' to tunnel
       # JBP_CONFIG_DEBUG: '{ enabled: true }'
@@ -24,6 +52,7 @@ applications:
       - lms-feature-flags
       - lms-smtp-credentials
       - lms-xsuaa
+      - lms-saas-registry
     health-check-type: http
     health-check-http-endpoint: /actuator/health
     timeout: 180

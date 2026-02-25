@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "ccc225a2-d682-4627-9f77-5d44f27c99a1",
 		"name": "LMS Mentoring API",
-		"description": "Postman collection for Learning Management System (Mentoring Project)\n\n## Authentication\n\n### Local Development\n- Use Basic Auth with credentials: user/password or manager/secret\n\n### Cloud (SAP BTP)\n- Use OAuth2 Bearer Token from XSUAA\n- First run 'Get XSUAA Token' request to obtain access token\n- All API requests will automatically use the token\n\n## Pagination\n\nGET all endpoints support pagination via query parameters:\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Page size (default: 20)\n- `sort`: Sort field and direction (e.g., `title,asc` or `createdAt,desc`)\n\nExample: `GET /api/v1/students?page=0&size=10&sort=lastName,asc`\n\n## Localization\n\nStudents have a `locale` field for email notification language preference:\n- Supported: `en`, `de`, `ru`\n- Default: `en`",
+		"description": "Postman collection for Learning Management System (Mentoring Project)\n\n## Authentication\n\n### Local Development\n- Use Basic Auth with credentials: user/password or manager/secret\n\n### Cloud (SAP BTP)\n- Use OAuth2 Bearer Token from XSUAA\n- First run 'Get XSUAA Token' request to obtain access token\n- All API requests will automatically use the token\n\n## Pagination\n\nGET all endpoints support pagination via query parameters:\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Page size (default: 20)\n- `sort`: Sort field and direction (e.g., `title,asc` or `createdAt,desc`)\n\nExample: `GET /api/v1/students?page=0&size=10&sort=lastName,asc`\n\n## Localization\n\nStudents have a `locale` field for email notification language preference:\n- Supported: `en`, `de`, `ru`\n- Default: `en`\n\n## Multitenancy\n\nThe application supports SAP BTP multitenancy:\n- Access via Approuter: `https://{tenant-subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com`\n- Admin endpoint `/api/v1/application-info` requires ADMIN role\n- SaaS Registry callbacks at `/callback/v1.0/`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "6593295",
 		"_collection_link": "https://interstellar-star-3717.postman.co/workspace/LMS-Mentoring~12b651dc-1296-4e99-b81d-a41d8e64b088/collection/6593295-ccc225a2-d682-4627-9f77-5d44f27c99a1?action=share&source=collection_link&creator=6593295"
@@ -101,6 +101,143 @@
 				}
 			],
 			"description": "XSUAA OAuth2 authentication for SAP BTP Cloud Foundry.\n\n## How to use:\n\n1. Set environment variables from XSUAA service binding:\n   - xsuaa_clientid\n   - xsuaa_clientsecret\n   - xsuaa_url\n\n2. Run 'Get XSUAA Token' request\n\n3. The token is automatically saved and used by all API requests"
+		},
+		{
+			"name": "Multitenancy (Admin)",
+			"item": [
+				{
+					"name": "Get Application Info (ADMIN)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/api/v1/application-info",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"application-info"
+							]
+						},
+						"description": "Returns XSUAA service binding information including token URL, client ID, and client secret.\n\n**Requires ADMIN role** - User must have `LMS_Admin` role collection assigned.\n\n**Response:**\n```json\n{\n  \"tokenUrl\": \"https://xxx.authentication.us10.hana.ondemand.com/oauth/token\",\n  \"clientId\": \"sb-learning-management-system!t12345\",\n  \"clientSecret\": \"***\",\n  \"xsappname\": \"learning-management-system!t12345\",\n  \"identityZone\": \"your-subaccount\",\n  \"tenantId\": \"tenant-guid\"\n}\n```\n\n**Note:** This endpoint is the welcomeFile for the Approuter."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant Dependencies",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/callback/v1.0/dependencies",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"dependencies"
+							]
+						},
+						"description": "Returns the list of service dependencies required for tenant subscription.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope (granted to SaaS provisioning service).\n\n**Response:**\n```json\n[\n  {\n    \"xsappname\": \"learning-management-system\"\n  }\n]\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service, not by end users."
+					},
+					"response": []
+				},
+				{
+					"name": "Subscribe Tenant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subscribedSubdomain\": \"tenant-subdomain\",\n  \"subscribedTenantId\": \"tenant-guid\",\n  \"eventType\": \"CREATE\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/callback/v1.0/tenants/{{tenantId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"tenants",
+								"{{tenantId}}"
+							]
+						},
+						"description": "Handles tenant subscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\n**Request Body (from SaaS Registry):**\n```json\n{\n  \"subscribedSubdomain\": \"subscriber-subaccount\",\n  \"subscribedTenantId\": \"tenant-guid\",\n  \"eventType\": \"CREATE\"\n}\n```\n\n**Response:** Returns tenant-specific Approuter URL:\n```\nhttps://subscriber-subaccount-lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during subscription flow."
+					},
+					"response": []
+				},
+				{
+					"name": "Unsubscribe Tenant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/callback/v1.0/tenants/{{tenantId}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"tenants",
+								"{{tenantId}}"
+							]
+						},
+						"description": "Handles tenant unsubscription callback from SaaS Provisioning Service.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope.\n\nThis endpoint:\n1. Cleans up tenant-specific data (if any)\n2. Removes tenant-specific configurations\n3. Returns 200 OK on success\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service during unsubscription flow."
+					},
+					"response": []
+				}
+			],
+			"description": "SAP BTP Multitenancy endpoints for application management and tenant provisioning.\n\n## Endpoints:\n\n### Application Info (ADMIN only)\n- `GET /api/v1/application-info` - Returns XSUAA credentials\n- Requires `LMS_Admin` role collection\n\n### SaaS Provisioning Callbacks\n- `GET /callback/v1.0/dependencies` - Service dependencies\n- `PUT /callback/v1.0/tenants/{tenantId}` - Tenant subscription\n- `DELETE /callback/v1.0/tenants/{tenantId}` - Tenant unsubscription\n- Requires `Callback` scope (granted to SaaS Provisioning Service)\n\n## Setup:\n\n1. Assign `LMS_Admin` role collection to access application-info\n2. SaaS callbacks are called automatically by SAP BTP"
 		},
 		{
 			"name": "Students",

@@ -41,12 +41,99 @@ The application requires the following SAP BTP services:
 | Service | Plan | Instance Name | Description |
 |---------|------|---------------|-------------|
 | HANA DB | hana-free | lms-hana-db | SAP HANA Cloud database |
-| XSUAA | application | lms-xsuaa | OAuth2 authentication service |
+| XSUAA | application | lms-xsuaa | OAuth2 authentication service (shared tenant-mode) |
+| SaaS Registry | application | lms-saas-registry | Marketplace registration & subscription management |
 | Application Logging | lite | lms-application-logging | Centralized logging service |
 | Application Autoscaler | standard | lms-application-autoscaler | Auto-scaling based on metrics |
 | Destination | lite | lms-destination | External connectivity management |
 | Feature Flags | lite | lms-feature-flags | Feature toggle management |
 | User-Provided | - | lms-smtp-credentials | SMTP server credentials |
+
+### Applications
+
+| Application | Type | Description |
+|-------------|------|-------------|
+| lms-approuter | Node.js | Entry point for all requests, tenant routing |
+| learning-management-system | Java | Backend Spring Boot application |
+
+---
+
+## Multitenancy Configuration
+
+The application supports SAP BTP multitenancy with provider/subscriber model.
+
+### Security Configuration (xs-security.json)
+
+```json
+{
+  "xsappname": "learning-management-system",
+  "tenant-mode": "shared",
+  "scopes": [
+    { "name": "$XSAPPNAME.user", "description": "Basic user access" },
+    { "name": "$XSAPPNAME.admin", "description": "Administrator access" },
+    { "name": "$XSAPPNAME.Callback", "description": "SaaS Provisioning callbacks" }
+  ],
+  "role-templates": [
+    { "name": "User", "scope-references": ["$XSAPPNAME.user"] },
+    { "name": "Admin", "scope-references": ["$XSAPPNAME.user", "$XSAPPNAME.admin"] }
+  ],
+  "role-collections": [
+    { "name": "LMS_User", "role-template-references": ["$XSAPPNAME.User"] },
+    { "name": "LMS_Admin", "role-template-references": ["$XSAPPNAME.Admin"] }
+  ]
+}
+```
+
+### SaaS Provisioning Configuration (saas-provisioning.json)
+
+```json
+{
+  "xsappname": "learning-management-system",
+  "appName": "learning-management-system",
+  "displayName": "Learning Management System",
+  "description": "Multi-tenant learning management system",
+  "category": "Education",
+  "appUrls": {
+    "getDependencies": "~{lms-api/url}/callback/v1.0/dependencies",
+    "onSubscription": "~{lms-api/url}/callback/v1.0/tenants/{tenantId}"
+  }
+}
+```
+
+### Approuter Configuration (approuter/xs-app.json)
+
+```json
+{
+  "welcomeFile": "/api/v1/application-info",
+  "authenticationMethod": "route",
+  "routes": [
+    { "source": "^/api/(.*)$", "destination": "lms-backend", "authenticationType": "xsuaa" },
+    { "source": "^/actuator/(.*)$", "destination": "lms-backend", "authenticationType": "none" }
+  ]
+}
+```
+
+### Role Assignment for Users
+
+After deployment, assign role collections to users:
+
+1. **Go to SAP BTP Cockpit** → Security → Trust Configuration
+2. **Select your Identity Provider** (e.g., SAP ID Service)
+3. **Click on a user** → Assign Role Collection
+4. **Assign:**
+   - `LMS_User` for standard API access
+   - `LMS_Admin` for admin endpoint access
+
+### Subscribing from Another Subaccount
+
+1. **Create a subscriber subaccount** in SAP BTP
+2. **Enable Cloud Foundry** in the subscriber subaccount
+3. **Navigate to** Service Marketplace → Find "Learning Management System"
+4. **Click Subscribe** → Subscription will call your callback endpoints
+5. **Access the app** via tenant-specific URL:
+   ```
+   https://{subscriber-subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com
+   ```
 
 ---
 
@@ -115,6 +202,8 @@ Alternatively, build with custom output directory:
 mbt build --mtar learning-management-system.mtar --target ./
 ```
 
+> **Note:** MTA build will automatically include the Approuter module and all service configurations.
+
 #### Step 5: Deploy to Cloud Foundry
 
 ```bash
@@ -153,11 +242,23 @@ cf mta-ops
 # Get details of deployed MTA
 cf mta learning-management-system
 
-# Check application status
+# Check application status (both approuter and backend)
 cf apps
 
 # View recent logs
 cf logs learning-management-system --recent
+cf logs lms-approuter --recent
+```
+
+#### Step 7: Assign Role Collections
+
+```bash
+# Get XSUAA service key to find the xsappname
+cf service-key lms-xsuaa lms-xsuaa-key
+
+# Then in SAP BTP Cockpit:
+# 1. Security → Trust Configuration → Your IDP
+# 2. Assign LMS_User or LMS_Admin to users
 ```
 
 ### MTA Management Commands
@@ -187,8 +288,11 @@ cf undeploy learning-management-system
 | File | Description |
 |------|-------------|
 | `mta.yaml` | MTA descriptor - defines modules, resources, and dependencies |
-| `xs-security.json` | XSUAA security configuration |
+| `xs-security.json` | XSUAA security configuration (shared tenant-mode, scopes, roles) |
+| `saas-provisioning.json` | SaaS Registry configuration for marketplace |
 | `autoscaler-config.json` | Application autoscaler policy |
+| `approuter/xs-app.json` | Approuter routing configuration |
+| `approuter/package.json` | Approuter Node.js dependencies |
 
 ---
 
@@ -226,19 +330,25 @@ Or create services manually:
 # 1. HANA DB (hana-free plan for trial)
 cf create-service hana-cloud hana-free lms-hana-db
 
-# 2. Application Logging Service
+# 2. XSUAA Service (OAuth2 with shared tenant mode)
+cf create-service xsuaa application lms-xsuaa -c xs-security.json
+
+# 3. SaaS Registry (Marketplace registration)
+cf create-service saas-registry application lms-saas-registry -c saas-provisioning.json
+
+# 4. Application Logging Service
 cf create-service application-logs lite lms-application-logging
 
-# 3. Application Autoscaler
+# 5. Application Autoscaler
 cf create-service autoscaler standard lms-application-autoscaler
 
-# 4. Destination Service
+# 6. Destination Service
 cf create-service destination lite lms-destination
 
-# 5. Feature Flags Service
+# 7. Feature Flags Service
 cf create-service feature-flags lite lms-feature-flags
 
-# 6. User-Provided SMTP Credentials Service
+# 8. User-Provided SMTP Credentials Service
 cf create-user-provided-service lms-smtp-credentials -p '{
   "host": "sandbox.smtp.mailtrap.io",
   "port": "2525",
@@ -257,15 +367,26 @@ mvn clean package -P cloud -DskipTests
 # The JAR file will be created at: target/learning-management-system-0.1.0.jar
 ```
 
+### Step 3.5: Install Approuter Dependencies
+
+```bash
+# Navigate to approuter directory and install dependencies
+cd approuter
+npm install
+cd ..
+```
+
 ### Step 4: Deploy to Cloud Foundry
 
 ```bash
-# Deploy using manifest.yaml
+# Deploy both applications using manifest.yaml
 cf push
 
 # Or deploy with specific options
 cf push -f manifest.yaml
 ```
+
+> **Note:** The manifest.yaml includes both the Approuter and Backend applications.
 
 ### Step 5: Configure SMTP Destination (Optional)
 
@@ -618,6 +739,33 @@ cf env learning-management-system | grep -A 50 '"feature-flags"'
 Copy the following values to your Postman cloud environment:
 - `destination_clientid`, `destination_clientsecret`, `destination_token_url`, `destination_uri`
 - `ff_clientid`, `ff_clientsecret`, `ff_token_url`, `ff_uri`
+
+## Multitenancy Endpoints
+
+The application exposes the following multitenancy-related endpoints:
+
+| Endpoint | Method | Access | Description |
+|----------|--------|--------|-------------|
+| `/api/v1/application-info` | GET | ADMIN role | Returns XSUAA service credentials |
+| `/callback/v1.0/dependencies` | GET | Callback scope | Returns service dependencies |
+| `/callback/v1.0/tenants/{tenantId}` | PUT | Callback scope | Subscription callback |
+| `/callback/v1.0/tenants/{tenantId}` | DELETE | Callback scope | Unsubscription callback |
+
+### Testing Application Info Endpoint
+
+```bash
+# 1. Get OAuth token (user must have LMS_Admin role)
+curl -X POST "https://{xsuaa-url}/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -u "{clientid}:{clientsecret}" \
+  -d "grant_type=password&username={user}&password={pass}"
+
+# 2. Call application-info endpoint
+curl -X GET "https://lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info" \
+  -H "Authorization: Bearer {access_token}"
+```
+
+---
 
 ## Additional Resources
 
