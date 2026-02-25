@@ -19,9 +19,9 @@ INSERT INTO courses (id, title, description, price, coins_paid, settings_id) VAL
     ('bbbbbbb2-bbbb-bbbb-bbbb-bbbbbbbbbbb2', 'Spring Boot Fundamentals', 'Learn to build REST APIs using Spring Boot', 149.99, 75.00, 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2');
 
 -- Lessons (Single Table Inheritance with lesson_type discriminator)
--- BASIC lessons (default type)
-INSERT INTO lessons (id, lesson_type, title, duration, course_id) VALUES
-    ('ccccccc1-cccc-cccc-cccc-ccccccccccc1', 'BASIC', 'Java Syntax and Basics', 45, 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1');
+-- VIDEO lessons (basic video content)
+INSERT INTO lessons (id, lesson_type, title, duration, course_id, url, platform) VALUES
+    ('ccccccc1-cccc-cccc-cccc-ccccccccccc1', 'VIDEO', 'Java Syntax and Basics', 45, 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbb1', 'https://www.youtube.com/watch?v=java101', 'YouTube');
 
 -- CLASSROOM lessons (with location and capacity)
 INSERT INTO lessons (id, lesson_type, title, duration, course_id, location, capacity) VALUES

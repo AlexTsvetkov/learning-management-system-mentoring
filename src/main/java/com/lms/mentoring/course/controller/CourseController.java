@@ -80,7 +80,7 @@ public class CourseController {
      * Get all lessons for a specific course.
      * 
      * @param id the course ID
-     * @return list of lessons (BASIC, CLASSROOM, or VIDEO types)
+     * @return list of lessons (CLASSROOM or VIDEO types)
      */
     @GetMapping("/{id}/lessons")
     public ResponseEntity<List<LessonDto>> getLessons(@PathVariable UUID id) {
@@ -90,5 +90,69 @@ public class CourseController {
                         .collect(Collectors.toList()))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Create a new lesson for a course.
+     * 
+     * @param courseId the course ID
+     * @param dto the lesson data (lessonType must be "CLASSROOM" or "VIDEO")
+     * @return the created lesson
+     */
+    @PostMapping("/{courseId}/lessons")
+    public ResponseEntity<LessonDto> createLesson(@PathVariable UUID courseId, @Valid @RequestBody LessonDto dto) {
+        var lesson = lessonMapper.toEntity(dto);
+        var created = service.createLesson(courseId, lesson);
+        var body = lessonMapper.toDto(created);
+        return ResponseEntity.created(java.net.URI.create("/api/v1/courses/" + courseId + "/lessons/" + body.getId())).body(body);
+    }
+
+    /**
+     * Get a specific lesson by ID.
+     * 
+     * @param courseId the course ID
+     * @param lessonId the lesson ID
+     * @return the lesson
+     */
+    @GetMapping("/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<LessonDto> getLesson(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
+        return service.findLessonById(lessonId)
+                .filter(lesson -> lesson.getCourse().getId().equals(courseId))
+                .map(lessonMapper::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Update an existing lesson.
+     * 
+     * @param courseId the course ID
+     * @param lessonId the lesson ID
+     * @param dto the updated lesson data
+     * @return the updated lesson
+     */
+    @PutMapping("/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<LessonDto> updateLesson(@PathVariable UUID courseId, @PathVariable UUID lessonId, @Valid @RequestBody LessonDto dto) {
+        return service.findLessonById(lessonId)
+                .filter(lesson -> lesson.getCourse().getId().equals(courseId))
+                .map(existing -> {
+                    lessonMapper.updateEntity(existing, dto);
+                    var updated = service.updateLesson(courseId, lessonId, existing);
+                    return ResponseEntity.ok(lessonMapper.toDto(updated));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Delete a lesson.
+     * 
+     * @param courseId the course ID
+     * @param lessonId the lesson ID
+     * @return no content
+     */
+    @DeleteMapping("/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<Void> deleteLesson(@PathVariable UUID courseId, @PathVariable UUID lessonId) {
+        service.deleteLesson(courseId, lessonId);
+        return ResponseEntity.noContent().build();
     }
 }
