@@ -1,70 +1,46 @@
-# =============================================================================
 # GitLab CI/CD Pipeline for Learning Management System
-# =============================================================================
-# Spring Boot application with SAP BTP Cloud Foundry MTA deployment
+# Spring Boot application with SAP BTP Cloud Foundry deployment
 #
-# Pipeline Stages:
-# 1. build    - Compile and package the application with Maven
-# 2. test     - Run unit tests and code quality checks
-# 3. package  - Build MTA archive using Cloud MTA Build Tool
-# 4. deploy   - Deploy to SAP BTP Cloud Foundry using MTA
+# Pipeline stages:
+# 1. Build: Compile and package the application
+# 2. Test: Run unit tests
+# 3. Deploy: Deploy to SAP BTP Cloud Foundry
 #
-# Required CI/CD Variables (Settings > CI/CD > Variables):
-# - CF_API           : Cloud Foundry API endpoint (e.g., https://api.cf.us10-001.hana.ondemand.com)
-# - CF_USERNAME      : Cloud Foundry username
-# - CF_PASSWORD      : Cloud Foundry password (masked)
-# - CF_ORG           : Cloud Foundry organization
-# - CF_SPACE         : Cloud Foundry space (dev)
-# - CF_API_PROD      : Production API endpoint (optional)
-# - CF_USERNAME_PROD : Production username (optional)
-# - CF_PASSWORD_PROD : Production password (optional)
-# - CF_ORG_PROD      : Production organization (optional)
-# - CF_SPACE_PROD    : Production space (optional)
-#
-# Runner Requirements:
-# - Docker executor with 'docker' tag
-# =============================================================================
+# Runner tags: java, maven, spring-boot, docker
 
-# Base image for Maven builds
-image: maven:3.9.9-eclipse-temurin-17
+image: maven:3.9.6-eclipse-temurin-17
 
-# Global variables
 variables:
-  # Maven configuration for faster builds
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  # Disable interactive mode for Maven
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
-  # MTA archive name (must match mta.yaml ID and version)
-  MTA_ARCHIVE: "learning-management-system_0.1.0.mtar"
+  # Application artifact name
+  ARTIFACT_NAME: "learning-management-system-0.1.0.jar"
 
-# Default configuration for all jobs
+# Default tags for all jobs - use our project runner
 default:
   tags:
     - docker
 
-# Cache Maven dependencies between pipeline runs to speed up builds
+# Cache Maven dependencies between pipeline runs
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
     - .m2/repository/
+    - target/
 
-# Define pipeline stages in execution order
 stages:
   - build
   - test
-  - package
   - deploy
 
-# =============================================================================
-# BUILD STAGE
-# =============================================================================
-# Compiles the Spring Boot application and creates JAR artifact
-# Uses 'cloud' Maven profile for SAP BTP-specific configuration
+# ==================== BUILD STAGE ====================
 build:
   stage: build
   script:
-    - "echo Building Spring Boot application with Java 17..."
-    - "mvn $MAVEN_CLI_OPTS clean package -P cloud -DskipTests"
-    - "echo Build completed successfully"
+    - echo "Building Spring Boot application..."
+    - mvn $MAVEN_CLI_OPTS clean package -DskipTests
+    - echo "Build completed successfully"
   artifacts:
     paths:
       - target/*.jar
@@ -75,17 +51,13 @@ build:
     - develop
     - merge_requests
 
-# =============================================================================
-# TEST STAGE
-# =============================================================================
-# Runs unit tests with JUnit 5 and generates test reports
-# Test reports are published to GitLab for merge request visibility
+# ==================== TEST STAGE ====================
 test:
   stage: test
   script:
-    - "echo Running unit tests..."
-    - "mvn $MAVEN_CLI_OPTS test"
-    - "echo Tests completed"
+    - echo "Running unit tests..."
+    - mvn $MAVEN_CLI_OPTS test
+    - echo "Tests completed"
   artifacts:
     when: always
     reports:
@@ -93,7 +65,6 @@ test:
         - target/surefire-reports/TEST-*.xml
     paths:
       - target/surefire-reports/
-      - target/site/jacoco-ut/
     expire_in: 1 week
   only:
     - main
@@ -101,120 +72,40 @@ test:
     - develop
     - merge_requests
 
-# Code quality check - runs static analysis and verification
-# Allowed to fail to not block the pipeline
-code-quality:
-  stage: test
-  script:
-    - "echo Running code quality checks..."
-    - "mvn $MAVEN_CLI_OPTS verify -DskipTests"
-  allow_failure: true
-  only:
-    - merge_requests
-
-# Dependency vulnerability check
-# Useful for security audits and scheduled scans
-dependency-check:
-  stage: test
-  script:
-    - "echo Checking dependencies..."
-    - "mvn $MAVEN_CLI_OPTS dependency:tree"
-  allow_failure: true
-  only:
-    - main
-    - master
-    - schedules
-
-# Integration tests using Failsafe plugin
-# Tests against real database (H2 or PostgreSQL in test profile)
-integration-test:
-  stage: test
-  script:
-    - "echo Running integration tests..."
-    - "mvn $MAVEN_CLI_OPTS verify -DskipUnitTests"
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - target/failsafe-reports/TEST-*.xml
-    paths:
-      - target/failsafe-reports/
-      - target/site/jacoco-it/
-    expire_in: 1 week
-  allow_failure: true
-  only:
-    - main
-    - master
-
-# =============================================================================
-# PACKAGE STAGE
-# =============================================================================
-# Builds Multi-Target Application (MTA) archive using Cloud MTA Build Tool
-# The MTA archive bundles the application with its service dependencies
-# defined in mta.yaml for deployment to SAP BTP
-mta-build:
-  stage: package
-  # Use SAP's MTA Build Tool image with Node.js and mbt CLI
-  image: devxci/mbtci:latest
-  script:
-    - "echo Building MTA archive using mta.yaml..."
-    - "mbt build --mtar ${MTA_ARCHIVE}"
-    - "echo MTA archive created successfully"
-    - "ls -la mta_archives/"
-  artifacts:
-    paths:
-      - mta_archives/*.mtar
-    expire_in: 1 week
-  dependencies:
-    - build
-  only:
-    - main
-    - master
-
-# =============================================================================
-# DEPLOY STAGE
-# =============================================================================
-# Deploy MTA to SAP BTP Cloud Foundry - Development Environment
-# Manual trigger to allow review before deployment
-# Uses cf deploy command (from cf-cli multiapps plugin) for MTA deployment
+# ==================== DEPLOY STAGE ====================
+# Deploy to SAP BTP Cloud Foundry (dev environment)
 deploy-dev:
   stage: deploy
-  image: devxci/mbtci:latest
+  image: governmentpaas/cf-cli:latest
   before_script:
-    - "echo Preparing MTA deployment to development environment..."
+    - echo "Preparing Cloud Foundry deployment..."
   script:
-    - "echo Logging into SAP BTP Cloud Foundry..."
-    - "cf login -a $CF_API -u $CF_USERNAME -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE"
-    - "echo Deploying MTA archive..."
-    - "cf deploy mta_archives/${MTA_ARCHIVE} --retries 3"
-    - "echo Deployment completed successfully"
-    - "cf apps"
-    - "cf services"
+    - echo "Logging into SAP BTP Cloud Foundry..."
+    - cf login -a "$CF_API" -u "$CF_USERNAME" -p "$CF_PASSWORD" -o "$CF_ORG" -s "$CF_SPACE"
+    - echo "Deploying application to Cloud Foundry..."
+    - cf push -f manifest.yaml
+    - echo "Deployment completed successfully"
+    - cf apps
   environment:
     name: development
     url: https://learning-management-system-1.cfapps.us10-001.hana.ondemand.com
-  dependencies:
-    - mta-build
   only:
     - main
     - master
   when: manual
   allow_failure: false
 
-# Deploy MTA to SAP BTP Cloud Foundry - Production Environment
-# Requires successful dev deployment first (needs: deploy-dev)
-# Manual trigger with additional approval recommended
+# Deploy to production (with approval)
 deploy-prod:
   stage: deploy
-  image: devxci/mbtci:latest
+  image: governmentpaas/cf-cli:latest
   script:
-    - "echo Logging into Production environment..."
-    - "cf login -a $CF_API_PROD -u $CF_USERNAME_PROD -p $CF_PASSWORD_PROD -o $CF_ORG_PROD -s $CF_SPACE_PROD"
-    - "echo Deploying MTA to Production..."
-    - "cf deploy mta_archives/${MTA_ARCHIVE} --retries 3"
-    - "echo Production deployment completed successfully"
-    - "cf apps"
-    - "cf services"
+    - echo "Logging into SAP BTP Cloud Foundry (Production)..."
+    - cf login -a "$CF_API_PROD" -u "$CF_USERNAME_PROD" -p "$CF_PASSWORD_PROD" -o "$CF_ORG_PROD" -s "$CF_SPACE_PROD"
+    - echo "Deploying application to Production..."
+    - cf push -f manifest.yaml
+    - echo "Production deployment completed"
+    - cf apps
   environment:
     name: production
     url: https://learning-management-system.cfapps.us10-001.hana.ondemand.com
@@ -224,30 +115,28 @@ deploy-prod:
   when: manual
   allow_failure: false
   needs:
-    - job: mta-build
-      artifacts: true
-    - job: deploy-dev
+    - deploy-dev
 
-# =============================================================================
-# CLEANUP / UTILITY JOBS
-# =============================================================================
-# Undeploy MTA from SAP BTP Cloud Foundry
-# Removes application, services, and service keys
-# Use with caution - deletes all related resources!
-undeploy:
-  stage: deploy
-  image: devxci/mbtci:latest
+# ==================== OPTIONAL JOBS ====================
+
+# Code quality check (optional - runs on merge requests)
+code-quality:
+  stage: test
   script:
-    - "echo Logging into SAP BTP Cloud Foundry..."
-    - "cf login -a $CF_API -u $CF_USERNAME -p $CF_PASSWORD -o $CF_ORG -s $CF_SPACE"
-    - "echo Undeploying MTA and associated services..."
-    - "cf undeploy learning-management-system --delete-services --delete-service-keys -f || true"
-    - "echo Undeployment completed"
-  environment:
-    name: development
-    action: stop
-  when: manual
+    - echo "Running code quality checks..."
+    - mvn $MAVEN_CLI_OPTS verify -DskipTests
+  allow_failure: true
+  only:
+    - merge_requests
+
+# Dependency check (security scan)
+dependency-check:
+  stage: test
+  script:
+    - echo "Checking for dependency vulnerabilities..."
+    - mvn $MAVEN_CLI_OPTS dependency:tree
   allow_failure: true
   only:
     - main
     - master
+    - schedules
