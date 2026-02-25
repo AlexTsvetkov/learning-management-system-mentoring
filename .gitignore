@@ -65,3 +65,5 @@ Makefile_*.mta
 
 cf-commands.md
 my_commands.md
+approuter/node_modules
+approuter/package-lock.json
