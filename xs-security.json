@@ -51,6 +51,11 @@
       ]
     }
   ],
+  "authorities": [
+    "$XSAPPNAME.user",
+    "$XSAPPNAME.admin",
+    "$XSAPPNAME.Callback"
+  ],
   "oauth2-configuration": {
     "redirect-uris": [
       "https://*.cfapps.us10-001.hana.ondemand.com/**"
