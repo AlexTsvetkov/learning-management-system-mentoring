@@ -127,25 +127,29 @@ public class TenantProvisioningController {
     }
 
     /**
-     * Builds the tenant-specific approuter URL.
-     * SAP BTP expects the URL in format: https://{subdomain}.{approuter-host}
-     * The subdomain from subscription payload is the tenant's subdomain.
+     * Builds the tenant URL for subscription.
+     * 
+     * For SAP BTP Trial accounts: Returns the provider's approuter URL since
+     * trial accounts don't support wildcard routes for tenant-specific URLs.
+     * All tenants share the same approuter URL - multitenancy is handled via
+     * JWT token (tenant ID in token payload).
+     * 
+     * For Production accounts with wildcard routes: Would return format 
+     * https://{subdomain}.{approuter-host}
      */
     private String buildTenantUrl(String subdomain) {
-        // For SAP BTP multitenancy, return approuter URL with tenant subdomain
-        // Format: https://{tenant-subdomain}.{approuter-host}
+        // For trial accounts, return the shared provider approuter URL
+        // Multitenancy is handled by the JWT token, not by different URLs
         
         if (approuterBaseUrl == null || approuterBaseUrl.isEmpty()) {
             log.warn("APPROUTER_URL is not configured, using fallback URL pattern");
-            return "https://" + subdomain + "-lms-approuter.cfapps.us10-001.hana.ondemand.com";
+            return "https://0658761dtrial-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com";
         }
         
-        // Extract host from APPROUTER_URL (e.g., "https://0658761dtrial-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com")
-        // and prepend tenant subdomain with dot separator
-        String approuterHost = approuterBaseUrl.replace("https://", "").replace("http://", "");
-        String tenantUrl = "https://" + subdomain + "." + approuterHost;
-        
-        log.debug("Built tenant URL: {} (from APPROUTER_URL: {})", tenantUrl, approuterBaseUrl);
-        return tenantUrl;
+        // Return the provider's approuter URL (shared for all tenants in trial)
+        // In production with wildcard routes, this would be: https://{subdomain}.{approuter-host}
+        log.debug("Built tenant URL: {} (provider approuter - trial account, subdomain ignored: {})", 
+                approuterBaseUrl, subdomain);
+        return approuterBaseUrl;
     }
 }
