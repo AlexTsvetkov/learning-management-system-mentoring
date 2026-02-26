@@ -1273,6 +1273,94 @@
 			"description": "SAP BTP Destination Service API requests."
 		},
 		{
+			"name": "Subscriber Tenant Tests",
+			"item": [
+				{
+					"name": "Health Check (Subscriber)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{subscriber_host}}/actuator/health",
+							"host": [
+								"{{subscriber_host}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Health check via subscriber tenant's mapped route."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Students (Subscriber)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{subscriber_host}}/api/v1/students",
+							"host": [
+								"{{subscriber_host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"students"
+							]
+						},
+						"description": "Get students via subscriber tenant's approuter."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Courses (Subscriber)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{subscriber_host}}/api/v1/courses",
+							"host": [
+								"{{subscriber_host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"courses"
+							]
+						},
+						"description": "Get courses via subscriber tenant's approuter."
+					},
+					"response": []
+				}
+			],
+			"description": "Tests for subscriber tenant via mapped route.\n\n## Setup\n\n1. Subscribe to the app in BTP Cockpit\n2. Map route manually:\n   ```\n   cf map-route lms-approuter cfapps.us10-001.hana.ondemand.com --hostname {subscriber-subdomain}\n   ```\n3. Update `subscriber_host` in environment\n4. Get XSUAA token first, then run subscriber tests"
+		},
+		{
 			"name": "SAP BTP - Feature Flags Service",
 			"item": [
 				{

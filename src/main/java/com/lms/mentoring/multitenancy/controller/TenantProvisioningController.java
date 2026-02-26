@@ -129,27 +129,32 @@ public class TenantProvisioningController {
     /**
      * Builds the tenant URL for subscription.
      * 
-     * For SAP BTP Trial accounts: Returns the provider's approuter URL since
-     * trial accounts don't support wildcard routes for tenant-specific URLs.
-     * All tenants share the same approuter URL - multitenancy is handled via
-     * JWT token (tenant ID in token payload).
+     * For SAP BTP Trial accounts: Each tenant gets a dedicated route mapped to the approuter.
+     * Route format: https://{subdomain}.cfapps.{region}.hana.ondemand.com
      * 
-     * For Production accounts with wildcard routes: Would return format 
-     * https://{subdomain}.{approuter-host}
+     * Note: The route must be manually mapped using:
+     * cf map-route lms-approuter cfapps.{region}.hana.ondemand.com --hostname {subdomain}
      */
     private String buildTenantUrl(String subdomain) {
-        // For trial accounts, return the shared provider approuter URL
-        // Multitenancy is handled by the JWT token, not by different URLs
+        // Build tenant-specific URL with subdomain as hostname
+        // Format: https://{subdomain}.cfapps.us10-001.hana.ondemand.com
         
-        if (approuterBaseUrl == null || approuterBaseUrl.isEmpty()) {
-            log.warn("APPROUTER_URL is not configured, using fallback URL pattern");
-            return "https://0658761dtrial-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com";
+        // Extract domain from approuter URL or use default
+        String domain = "cfapps.us10-001.hana.ondemand.com";
+        
+        if (approuterBaseUrl != null && !approuterBaseUrl.isEmpty()) {
+            // Extract domain from APPROUTER_URL (e.g., https://org-space-app.cfapps.region.hana.ondemand.com)
+            String host = approuterBaseUrl.replace("https://", "").replace("http://", "");
+            int firstDot = host.indexOf('.');
+            if (firstDot > 0) {
+                domain = host.substring(firstDot + 1);
+            }
         }
         
-        // Return the provider's approuter URL (shared for all tenants in trial)
-        // In production with wildcard routes, this would be: https://{subdomain}.{approuter-host}
-        log.debug("Built tenant URL: {} (provider approuter - trial account, subdomain ignored: {})", 
-                approuterBaseUrl, subdomain);
-        return approuterBaseUrl;
+        String tenantUrl = "https://" + subdomain + "." + domain;
+        
+        log.info("Built tenant URL: {} (requires route mapping: cf map-route lms-approuter {} --hostname {})", 
+                tenantUrl, domain, subdomain);
+        return tenantUrl;
     }
 }
