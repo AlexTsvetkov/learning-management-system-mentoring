@@ -98,6 +98,90 @@
 						"description": "Open jwt.io to decode and verify your XSUAA token.\n\nNote: This just opens the URL - you can paste your token at jwt.io to see its contents."
 					},
 					"response": []
+				},
+				{
+					"name": "Get Subscriber Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.environment.set(\"subscriber_access_token\", jsonData.access_token);",
+									"    console.log(\"Subscriber access token saved to subscriber_access_token\");",
+									"    console.log(\"Token expires in: \" + jsonData.expires_in + \" seconds\");",
+									"    ",
+									"    // Decode JWT to show tenant info",
+									"    var parts = jsonData.access_token.split('.');",
+									"    if (parts.length === 3) {",
+									"        var payload = JSON.parse(atob(parts[1]));",
+									"        console.log(\"Tenant ID (zid): \" + payload.zid);",
+									"        if (payload.ext_attr) {",
+									"            console.log(\"Subdomain: \" + payload.ext_attr.zdn);",
+									"            console.log(\"Subaccount ID: \" + payload.ext_attr.subaccountid);",
+									"        }",
+									"    }",
+									"} else {",
+									"    console.error(\"No access_token in response\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{xsuaa_clientid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{xsuaa_clientsecret}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://{{subscriber_subdomain}}.authentication.{{cf_region}}.hana.ondemand.com/oauth/token",
+							"protocol": "https",
+							"host": [
+								"{{subscriber_subdomain}}",
+								"authentication",
+								"{{cf_region}}",
+								"hana",
+								"ondemand",
+								"com"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Gets an OAuth2 token using the **subscriber's subdomain**.\n\n**Key Concept:** In SaaS multitenancy with XSUAA broker plan:\n- Same client ID and secret work for all tenants\n- The **subdomain in the URL** determines which tenant the token is for\n\n**Setup:**\n1. Set `subscriber_subdomain` to your subscriber's subdomain\n2. Set `cf_region` (e.g., 'us10' for US East)\n3. Use same `xsuaa_clientid` and `xsuaa_clientsecret`\n\n**Example URLs:**\n- Provider: `https://0658761dtrial.authentication.us10.hana.ondemand.com`\n- Subscriber: `https://lms-subscriber.authentication.us10.hana.ondemand.com`\n\n**The token's `zid` claim will contain the subscriber's tenant ID!**"
+					},
+					"response": []
 				}
 			],
 			"description": "XSUAA OAuth2 authentication for SAP BTP Cloud Foundry.\n\n## How to use:\n\n1. Set environment variables from XSUAA service binding:\n   - xsuaa_clientid\n   - xsuaa_clientsecret\n   - xsuaa_url\n\n2. Run 'Get XSUAA Token' request\n\n3. The token is automatically saved and used by all API requests"
@@ -105,6 +189,66 @@
 		{
 			"name": "Multitenancy (Admin)",
 			"item": [
+				{
+					"name": "Get Tenant Context",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{backend_host}}/api/v1/tenant-context",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tenant-context"
+							]
+						},
+						"description": "Returns current tenant context from the JWT token.\n\n**Use this to verify which tenant is making the request.**\n\n**Response includes:**\n- `tenantId`: The zone/tenant ID (zid claim) - different for each subscriber\n- `subdomain`: The subscriber's subdomain\n- `subaccountId`: The subscriber's subaccount ID\n- `isProvider`: true if token is from provider tenant\n- `isSubscriber`: true if token is from subscriber tenant\n\n**Testing Multitenancy:**\n1. Get token from provider (normal XSUAA token)\n2. Call this endpoint - should show isProvider: true\n3. Get token from subscriber XSUAA\n4. Call this endpoint - should show isSubscriber: true with different tenantId"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant Context (Subscriber)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{subscriber_host}}/api/v1/tenant-context",
+							"host": [
+								"{{subscriber_host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tenant-context"
+							]
+						},
+						"description": "Returns tenant context via subscriber route.\n\n**Compare the response with provider tenant context to see the difference.**"
+					},
+					"response": []
+				},
 				{
 					"name": "Get Application Info (ADMIN)",
 					"request": {
@@ -1359,6 +1503,369 @@
 				}
 			],
 			"description": "Tests for subscriber tenant via mapped route.\n\n## Setup\n\n1. Subscribe to the app in BTP Cockpit\n2. Map route manually:\n   ```\n   cf map-route lms-approuter cfapps.us10-001.hana.ondemand.com --hostname {subscriber-subdomain}\n   ```\n3. Update `subscriber_host` in environment\n4. Get XSUAA token first, then run subscriber tests"
+		},
+		{
+			"name": "SAP BTP - SaaS Registry Service",
+			"item": [
+				{
+					"name": "Get OAuth Token (SaaS Registry)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.environment.set(\"saas_registry_access_token\", jsonData.access_token);",
+									"    console.log(\"SaaS Registry access token saved\");",
+									"    console.log(\"Token expires in: \" + jsonData.expires_in + \" seconds\");",
+									"} else {",
+									"    console.error(\"No access_token in response\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{saas_registry_clientid}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{saas_registry_clientsecret}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{saas_registry_url}}/oauth/token",
+							"host": [
+								"{{saas_registry_url}}"
+							],
+							"path": [
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Gets an OAuth2 access token for SaaS Registry API calls.\n\n**Automatically saves token to `saas_registry_access_token`**\n\nGet credentials from:\n```\ncf env learning-management-system | grep -A 50 'saas-registry'\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Subscriptions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{saas_registry_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{saas_registry_api_url}}/saas-manager/v1/application/subscriptions",
+							"host": [
+								"{{saas_registry_api_url}}"
+							],
+							"path": [
+								"saas-manager",
+								"v1",
+								"application",
+								"subscriptions"
+							]
+						},
+						"description": "Lists all subscriptions to your SaaS application.\n\n**Requires:** `saas_registry_access_token` (run 'Get OAuth Token' first)\n\n**Response includes:**\n- Subscribed tenant IDs\n- Subscription status\n- Subscriber subdomains"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Application Info (SaaS Registry)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{saas_registry_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{saas_registry_api_url}}/saas-manager/v1/application",
+							"host": [
+								"{{saas_registry_api_url}}"
+							],
+							"path": [
+								"saas-manager",
+								"v1",
+								"application"
+							]
+						},
+						"description": "Gets information about your registered SaaS application.\n\n**Returns:**\n- Application name and description\n- Callback URLs\n- Subscription count"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subscription by Tenant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{saas_registry_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{saas_registry_api_url}}/saas-manager/v1/application/subscriptions?tenantId={{tenantId}}",
+							"host": [
+								"{{saas_registry_api_url}}"
+							],
+							"path": [
+								"saas-manager",
+								"v1",
+								"application",
+								"subscriptions"
+							],
+							"query": [
+								{
+									"key": "tenantId",
+									"value": "{{tenantId}}"
+								}
+							]
+						},
+						"description": "Gets subscription details for a specific tenant.\n\n**Required:** Set `tenantId` variable"
+					},
+					"response": []
+				}
+			],
+			"description": "SAP BTP SaaS Registry Service API for managing subscriptions.\n\n## Setup\n\n1. Get SaaS Registry credentials:\n   ```\n   cf env learning-management-system | grep -A 50 'saas-registry'\n   ```\n\n2. Set environment variables:\n   - `saas_registry_clientid`\n   - `saas_registry_clientsecret`\n   - `saas_registry_url`\n   - `saas_registry_api_url` (e.g., https://saas-manager.cfapps.us10.hana.ondemand.com)\n\n3. Run 'Get OAuth Token' first, then use other requests"
+		},
+		{
+			"name": "Subscriber API Tests (Direct)",
+			"item": [
+				{
+					"name": "1. Get Dependencies (No Auth)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{backend_host}}/callback/v1.0/dependencies",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"dependencies"
+							]
+						},
+						"description": "Test the dependencies endpoint without authentication.\n\n**Expected:** 401 Unauthorized (requires Callback scope)\n\nThis endpoint is protected and should only be called by SaaS Provisioning Service."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Get Dependencies (With Token)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{backend_host}}/callback/v1.0/dependencies",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"dependencies"
+							]
+						},
+						"description": "Test the dependencies endpoint with XSUAA token.\n\n**Expected Response:** `[]` (empty array)\n\nThis endpoint returns service dependencies required for tenant subscription.\nCurrently returns empty array as there are no external reuse service dependencies."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Subscribe Tenant (Test)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subscribedSubdomain\": \"test-subscriber\",\n  \"subscribedTenantId\": \"{{tenantId}}\",\n  \"eventType\": \"CREATE\",\n  \"subscribedSubaccountId\": \"{{tenantId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{backend_host}}/callback/v1.0/tenants/{{tenantId}}",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"tenants",
+								"{{tenantId}}"
+							]
+						},
+						"description": "Test the subscription callback endpoint.\n\n**Expected Response:** Tenant URL string\n```\nhttps://test-subscriber.cfapps.us10-001.hana.ondemand.com\n```\n\n**Payload fields:**\n- `subscribedSubdomain`: Subscriber's subaccount subdomain\n- `subscribedTenantId`: Unique tenant ID (GUID)\n- `eventType`: \"CREATE\" for subscription\n- `subscribedSubaccountId`: Same as tenantId\n\n**Note:** In production, this is called automatically by SaaS Provisioning Service."
+					},
+					"response": []
+				},
+				{
+					"name": "4. Unsubscribe Tenant (Test)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{backend_host}}/callback/v1.0/tenants/{{tenantId}}",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"callback",
+								"v1.0",
+								"tenants",
+								"{{tenantId}}"
+							]
+						},
+						"description": "Test the unsubscription callback endpoint.\n\n**Expected Response:** 200 OK (empty body)\n\nThis endpoint handles tenant cleanup when a subscriber unsubscribes.\n\n**Note:** In production, this is called automatically by SaaS Provisioning Service."
+					},
+					"response": []
+				},
+				{
+					"name": "5. Check App Logs for Callbacks",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{backend_host}}/actuator/loggers/com.lms.mentoring.multitenancy",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"actuator",
+								"loggers",
+								"com.lms.mentoring.multitenancy"
+							]
+						},
+						"description": "Check the log level for multitenancy package.\n\n**To enable DEBUG logging:**\n```json\nPOST /actuator/loggers/com.lms.mentoring.multitenancy\n{\"configuredLevel\": \"DEBUG\"}\n```\n\nThen check Cloud Foundry logs:\n```\ncf logs learning-management-system --recent | grep -i tenant\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "6. Enable DEBUG Logging",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{xsuaa_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"configuredLevel\": \"DEBUG\"\n}"
+						},
+						"url": {
+							"raw": "{{backend_host}}/actuator/loggers/com.lms.mentoring.multitenancy",
+							"host": [
+								"{{backend_host}}"
+							],
+							"path": [
+								"actuator",
+								"loggers",
+								"com.lms.mentoring.multitenancy"
+							]
+						},
+						"description": "Enable DEBUG logging for multitenancy callbacks.\n\nAfter enabling, check logs:\n```\ncf logs learning-management-system --recent | grep -i tenant\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "Direct tests for the Subscriber API (SaaS Provisioning callbacks).\n\n## Overview\n\nThese endpoints are callback URLs that SaaS Provisioning Service calls during subscription/unsubscription.\n\n## Endpoints\n\n| Endpoint | Method | Description |\n|----------|--------|-------------|\n| `/callback/v1.0/dependencies` | GET | Returns service dependencies |\n| `/callback/v1.0/tenants/{tenantId}` | PUT | Subscription callback |\n| `/callback/v1.0/tenants/{tenantId}` | DELETE | Unsubscription callback |\n\n## Testing Flow\n\n1. **Get XSUAA Token first** (from Authentication folder)\n2. **Test Dependencies** - Should return empty array\n3. **Test Subscribe** - Should return tenant URL\n4. **Test Unsubscribe** - Should return 200 OK\n5. **Check logs** - Verify callbacks were logged\n\n## Real Subscription\n\nFor real subscription testing:\n1. Create subscriber subaccount in BTP Cockpit\n2. Subscribe to app from Service Marketplace\n3. Map route: `cf map-route lms-approuter cfapps.us10-001.hana.ondemand.com --hostname {subdomain}`\n4. Access via subscriber URL"
 		},
 		{
 			"name": "SAP BTP - Feature Flags Service",

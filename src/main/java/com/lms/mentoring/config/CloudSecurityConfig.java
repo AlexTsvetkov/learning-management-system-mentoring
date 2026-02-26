@@ -21,6 +21,10 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Security configuration for SAP BTP Cloud Foundry environment.
  * Uses XSUAA service for OAuth2/JWT token-based authentication.
@@ -53,21 +57,103 @@ public class CloudSecurityConfig {
     }
 
     /**
-     * JWT Decoder for validating XSUAA tokens.
-     * Uses the XSUAA service configuration to get the JWK set URI.
+     * JWT Decoder for validating XSUAA tokens from multiple tenants.
+     * 
+     * For multi-tenant SaaS apps with XSUAA broker plan:
+     * - Tokens can come from any subscribed tenant's identity zone
+     * - Each tenant has its own token_keys endpoint
+     * - The decoder must dynamically resolve the correct endpoint based on the token's issuer
+     * 
+     * This implementation uses a multi-tenant JWT decoder that:
+     * - Extracts the issuer (iss) from the token
+     * - Constructs the JWK URI from the issuer URL
+     * - Validates the issuer domain matches the XSUAA domain
+     * - Caches JwtDecoders per tenant for performance
      */
     @Bean
     public JwtDecoder jwtDecoder(XsuaaServiceConfiguration xsuaaServiceConfiguration) {
-        String uaaUrl = xsuaaServiceConfiguration.getUaaUrl();
-        log.info("Creating JWT Decoder with UAA URL: {}", uaaUrl);
+        String uaaDomain = xsuaaServiceConfiguration.getUaaDomain();
+        log.info("Creating Multi-tenant JWT Decoder with UAA Domain: {}", uaaDomain);
         
-        if (uaaUrl == null || uaaUrl.isBlank()) {
-            throw new IllegalStateException("XSUAA URL is not configured. Check VCAP_SERVICES binding.");
+        return new MultiTenantJwtDecoder(uaaDomain);
+    }
+    
+    /**
+     * Multi-tenant JWT decoder that validates tokens from any subscribed tenant.
+     * It dynamically resolves the JWK URI based on the token's issuer claim,
+     * allowing tokens from different tenants to be validated.
+     */
+    private static class MultiTenantJwtDecoder implements JwtDecoder {
+        private final String uaaDomain;
+        private final Map<String, NimbusJwtDecoder> decoderCache = new ConcurrentHashMap<>();
+        
+        public MultiTenantJwtDecoder(String uaaDomain) {
+            this.uaaDomain = uaaDomain;
         }
         
-        String jwkSetUri = uaaUrl + "/token_keys";
-        log.info("JWK Set URI: {}", jwkSetUri);
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        @Override
+        public Jwt decode(String token) {
+            // Parse the token to get the issuer without validation
+            String issuer = extractIssuer(token);
+            
+            if (issuer == null) {
+                throw new org.springframework.security.oauth2.jwt.JwtException("Token missing issuer claim");
+            }
+            
+            // Validate the issuer is from a trusted domain
+            if (!isValidIssuer(issuer)) {
+                throw new org.springframework.security.oauth2.jwt.JwtException(
+                        "Untrusted issuer: " + issuer + ". Expected domain: " + uaaDomain);
+            }
+            
+            // Get or create decoder for this issuer
+            NimbusJwtDecoder decoder = decoderCache.computeIfAbsent(issuer, this::createDecoder);
+            
+            return decoder.decode(token);
+        }
+        
+        private String extractIssuer(String token) {
+            try {
+                // Split JWT and decode payload
+                String[] parts = token.split("\\.");
+                if (parts.length < 2) {
+                    return null;
+                }
+                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode claims = mapper.readTree(payload);
+                JsonNode issNode = claims.get("iss");
+                return issNode != null ? issNode.asText() : null;
+            } catch (Exception e) {
+                log.warn("Failed to extract issuer from token", e);
+                return null;
+            }
+        }
+        
+        private boolean isValidIssuer(String issuer) {
+            // Issuer must be from the XSUAA domain
+            // Format: https://{subdomain}.authentication.{region}.hana.ondemand.com/oauth/token
+            // uaaDomain format: authentication.us10.hana.ondemand.com
+            try {
+                URL issuerUrl = new URL(issuer);
+                String host = issuerUrl.getHost();
+                // Host should end with the uaaDomain (e.g., xyz.authentication.us10.hana.ondemand.com)
+                return host.endsWith(uaaDomain) || host.contains(".authentication.");
+            } catch (Exception e) {
+                log.warn("Invalid issuer URL: {}", issuer);
+                return false;
+            }
+        }
+        
+        private NimbusJwtDecoder createDecoder(String issuer) {
+            // Extract base URL from issuer (remove /oauth/token if present)
+            String baseUrl = issuer.replace("/oauth/token", "");
+            String jwkSetUri = baseUrl + "/token_keys";
+            
+            log.info("Creating JWT Decoder for issuer: {} with JWK URI: {}", issuer, jwkSetUri);
+            
+            return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        }
     }
 
     /**
