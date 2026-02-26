@@ -1284,73 +1284,6 @@
 			"name": "Subscriber Tenant Tests",
 			"item": [
 				{
-					"name": "Get Subscriber Token",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.access_token) {",
-									"    pm.environment.set(\"xsuaa_access_token\", jsonData.access_token);",
-									"    console.log(\"Subscriber token saved to xsuaa_access_token\");",
-									"    console.log(\"Token expires in: \" + jsonData.expires_in + \" seconds\");",
-									"} else {",
-									"    console.error(\"No access_token in response\");",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "basic",
-							"basic": [
-								{
-									"key": "username",
-									"value": "{{subscriber_xsuaa_clientid}}",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "{{subscriber_xsuaa_clientsecret}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "client_credentials",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "{{subscriber_xsuaa_url}}/oauth/token",
-							"host": [
-								"{{subscriber_xsuaa_url}}"
-							],
-							"path": [
-								"oauth",
-								"token"
-							]
-						},
-						"description": "Gets an OAuth2 access token from the SUBSCRIBER tenant's XSUAA.\n\n**Important:** This uses the subscriber's identity zone, not the provider's.\n\n**Setup:**\n1. In subscriber subaccount, go to Instances and Subscriptions\n2. Find 'Learning Management System' subscription\n3. Create a service key or use the subscription's credentials\n4. Set environment variables:\n   - subscriber_xsuaa_clientid\n   - subscriber_xsuaa_clientsecret\n   - subscriber_xsuaa_url"
-					},
-					"response": []
-				},
-				{
 					"name": "Health Check (Subscriber)",
 					"request": {
 						"auth": {
@@ -1359,9 +1292,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/health",
+							"raw": "{{subscriber_host}}/actuator/health",
 							"host": [
-								"{{host}}"
+								"{{subscriber_host}}"
 							],
 							"path": [
 								"actuator",
@@ -1388,9 +1321,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/application-info",
+							"raw": "{{subscriber_host}}/api/v1/application-info",
 							"host": [
-								"{{host}}"
+								"{{subscriber_host}}"
 							],
 							"path": [
 								"api",
@@ -1398,7 +1331,7 @@
 								"application-info"
 							]
 						},
-						"description": "Returns XSUAA info for the subscriber tenant.\n\n**Expected:** Should show subscriber's tenant ID and identity zone.\n\n**Requires:** ADMIN role in subscriber's role collection."
+						"description": "Returns XSUAA info via subscriber tenant's approuter.\n\n**Note:** Uses same token as provider - both share XSUAA broker.\n\n**Requires:** ADMIN role."
 					},
 					"response": []
 				},
@@ -1418,9 +1351,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students",
+							"raw": "{{subscriber_host}}/api/v1/students",
 							"host": [
-								"{{host}}"
+								"{{subscriber_host}}"
 							],
 							"path": [
 								"api",
@@ -1428,7 +1361,7 @@
 								"students"
 							]
 						},
-						"description": "Returns students visible to the subscriber tenant.\n\n**Note:** In current implementation, all tenants share the same database. In a real multi-tenant app, data would be isolated per tenant."
+						"description": "Returns students via subscriber tenant's approuter.\n\n**Note:** In current implementation, all tenants share the same database. In a real multi-tenant app, data would be isolated per tenant."
 					},
 					"response": []
 				},
@@ -1448,9 +1381,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses",
+							"raw": "{{subscriber_host}}/api/v1/courses",
 							"host": [
-								"{{host}}"
+								"{{subscriber_host}}"
 							],
 							"path": [
 								"api",
@@ -1458,7 +1391,7 @@
 								"courses"
 							]
 						},
-						"description": "Returns courses visible to the subscriber tenant."
+						"description": "Returns courses via subscriber tenant's approuter."
 					},
 					"response": []
 				},
@@ -1487,9 +1420,9 @@
 							"raw": "{\n  \"firstName\": \"Subscriber\",\n  \"lastName\": \"TestUser\",\n  \"email\": \"subscriber.test@example.com\",\n  \"dateOfBirth\": \"1995-06-15\",\n  \"coins\": 100.00,\n  \"locale\": \"en\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/students",
+							"raw": "{{subscriber_host}}/api/v1/students",
 							"host": [
-								"{{host}}"
+								"{{subscriber_host}}"
 							],
 							"path": [
 								"api",
@@ -1497,12 +1430,12 @@
 								"students"
 							]
 						},
-						"description": "Creates a new student via the subscriber tenant's API. This verifies that write operations work for the subscribed tenant."
+						"description": "Creates a new student via the subscriber tenant's approuter. This verifies that write operations work for the subscribed tenant."
 					},
 					"response": []
 				}
 			],
-			"description": "Tests for verifying the subscribed tenant (subscriber subaccount) can access the application.\n\n## Setup for Subscriber Testing\n\n1. **Use the 'subscriber' environment** in Postman\n\n2. **Get XSUAA credentials from subscriber subaccount:**\n   - In BTP Cockpit, go to subscriber subaccount\n   - Security > Users > Assign role collection to your user\n   - Or create a service key for the subscription\n\n3. **Set environment variables:**\n   - subscriber_xsuaa_clientid\n   - subscriber_xsuaa_clientsecret\n   - subscriber_xsuaa_url\n\n4. **Run 'Get Subscriber Token' first**\n\n5. **Test the endpoints**\n\n## Expected Results\n\n- Health check should return UP\n- Application Info should show subscriber's tenant ID\n- CRUD operations should work with subscriber's token"
+			"description": "Tests for verifying the subscribed tenant (subscriber subaccount) can access the application.\n\n## Setup for Subscriber Testing\n\n1. **Use the 'cloud' environment** in Postman\n\n2. **Get XSUAA token first** (from Authentication folder)\n\n3. **Test subscriber endpoints** - they use `{{subscriber_host}}`\n\n## Environment Variables\n\n- `subscriber_host`: Subscriber tenant's approuter URL\n- Uses same `xsuaa_access_token` as provider (shared XSUAA broker)\n\n## Expected Results\n\n- Health check should return UP\n- CRUD operations should work with provider's token via subscriber approuter"
 		},
 		{
 			"name": "SAP BTP - Feature Flags Service",
