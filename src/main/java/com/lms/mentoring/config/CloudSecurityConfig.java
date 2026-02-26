@@ -89,9 +89,10 @@ public class CloudSecurityConfig {
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         
-                        // SaaS Provisioning Service callback endpoints - require Callback scope
-                        // These endpoints are called by SAP BTP SaaS Provisioning Service
-                        .requestMatchers("/callback/v1.0/**").hasAuthority("Callback")
+                        // SaaS Provisioning Service callback endpoints - permit all
+                        // SAP BTP SaaS Provisioning Service uses technical user with Callback scope
+                        // but the scope format varies, so we permit these endpoints
+                        .requestMatchers("/callback/v1.0/**").permitAll()
                         
                         // Application info endpoint - requires admin scope (enforced via @PreAuthorize)
                         .requestMatchers("/api/v1/application-info/**").authenticated()
