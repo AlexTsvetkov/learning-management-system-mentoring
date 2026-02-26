@@ -130,8 +130,18 @@ public class TenantProvisioningController {
     private String buildTenantUrl(String subdomain) {
         // For SAP BTP multitenancy, return approuter URL with tenant subdomain
         // Format: https://{tenant-subdomain}.{approuter-host}
-        String baseUrl = "https://" + subdomain + ".0658761dtrial-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com";
-        log.debug("Built tenant URL: {}", baseUrl);
-        return baseUrl;
+        
+        if (approuterBaseUrl == null || approuterBaseUrl.isEmpty()) {
+            log.warn("APPROUTER_URL is not configured, using fallback URL pattern");
+            return "https://" + subdomain + "-lms-approuter.cfapps.us10-001.hana.ondemand.com";
+        }
+        
+        // Extract host from APPROUTER_URL (e.g., "https://0658761dtrial-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com")
+        // and prepend tenant subdomain with dot separator
+        String approuterHost = approuterBaseUrl.replace("https://", "").replace("http://", "");
+        String tenantUrl = "https://" + subdomain + "." + approuterHost;
+        
+        log.debug("Built tenant URL: {} (from APPROUTER_URL: {})", tenantUrl, approuterBaseUrl);
+        return tenantUrl;
     }
 }
