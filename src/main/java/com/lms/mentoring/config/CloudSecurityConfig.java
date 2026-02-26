@@ -71,33 +71,10 @@ public class CloudSecurityConfig {
     }
 
     /**
-     * Security filter chain for SaaS Provisioning Service callback endpoints.
-     * This filter chain completely bypasses JWT validation since the SaaS Provisioning Service
-     * sends tokens from different identity zones that cannot be validated by our XSUAA.
-     * Order 1 means this filter chain is evaluated first.
+     * Main security filter chain for all endpoints.
+     * Callback endpoints require 'Callback' scope granted via grant-as-authority-to-apps.
      */
     @Bean
-    @org.springframework.core.annotation.Order(1)
-    public SecurityFilterChain callbackSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/callback/v1.0/**")
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().permitAll()
-                );
-        
-        return http.build();
-    }
-
-    /**
-     * Main security filter chain for all other endpoints.
-     * Order 2 means this filter chain is evaluated after the callback filter chain.
-     */
-    @Bean
-    @org.springframework.core.annotation.Order(2)
     public SecurityFilterChain cloudSecurityFilterChain(HttpSecurity http, 
                                                          XsuaaServiceConfiguration xsuaaServiceConfiguration) throws Exception {
         http
@@ -118,6 +95,9 @@ public class CloudSecurityConfig {
                         
                         // Application info endpoint - requires admin scope (enforced via @PreAuthorize)
                         .requestMatchers("/api/v1/application-info/**").authenticated()
+                        
+                        // SaaS Provisioning Service callback endpoints - require Callback scope
+                        .requestMatchers("/callback/v1.0/**").hasAuthority("Callback")
                         
                         // All other API endpoints require user scope
                         .requestMatchers("/api/**").hasAuthority("user")
