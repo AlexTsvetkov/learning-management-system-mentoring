@@ -121,9 +121,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/application-info",
+							"raw": "{{backend_host}}/api/v1/application-info",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -131,7 +131,7 @@
 								"application-info"
 							]
 						},
-						"description": "Returns XSUAA service binding information including token URL, client ID, and client secret.\n\n**Requires ADMIN role** - User must have `LMS_Admin` role collection assigned.\n\n**Response:**\n```json\n{\n  \"tokenUrl\": \"https://xxx.authentication.us10.hana.ondemand.com/oauth/token\",\n  \"clientId\": \"sb-learning-management-system!t12345\",\n  \"clientSecret\": \"***\",\n  \"xsappname\": \"learning-management-system!t12345\",\n  \"identityZone\": \"your-subaccount\",\n  \"tenantId\": \"tenant-guid\"\n}\n```\n\n**Note:** This endpoint is the welcomeFile for the Approuter."
+						"description": "Returns XSUAA service binding information.\n\n**Requires ADMIN scope** (admin role in xs-security.json)."
 					},
 					"response": []
 				},
@@ -258,9 +258,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students",
+							"raw": "{{backend_host}}/api/v1/students",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -268,7 +268,7 @@
 								"students"
 							]
 						},
-						"description": "Returns all students.\n\n**Cloud:** Uses Bearer token from XSUAA\n**Local:** Change auth to Basic (user/password)\n\n**Pagination:** Supports `page`, `size`, `sort` query parameters"
+						"description": "Returns all students.\n\n**Cloud:** Uses Bearer token from XSUAA - calls backend directly\n**Local:** Change auth to Basic (user/password)\n\n**Note:** For API access with tokens, use backend_host (not approuter)"
 					},
 					"response": []
 				},
@@ -288,9 +288,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students?page=0&size=10&sort=lastName,asc",
+							"raw": "{{backend_host}}/api/v1/students?page=0&size=10&sort=lastName,asc",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -315,7 +315,7 @@
 								}
 							]
 						},
-						"description": "Returns paginated students.\n\n**Pagination Parameters:**\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Number of items per page (default: 20)\n- `sort`: Sort field and direction (e.g., `lastName,asc`)\n\n**Response includes:**\n- `content`: Array of students\n- `totalElements`: Total number of students\n- `totalPages`: Total number of pages\n- `size`: Page size\n- `number`: Current page number"
+						"description": "Returns paginated students.\n\n**Pagination Parameters:**\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Number of items per page (default: 20)\n- `sort`: Sort field and direction (e.g., `lastName,asc`)"
 					},
 					"response": []
 				},
@@ -335,9 +335,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"raw": "{{backend_host}}/api/v1/students/{{studentId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -374,9 +374,9 @@
 							"raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"dateOfBirth\": \"2000-01-01\",\n  \"coins\": 500.00,\n  \"locale\": \"en\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/students",
+							"raw": "{{backend_host}}/api/v1/students",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -384,7 +384,7 @@
 								"students"
 							]
 						},
-						"description": "Creates a new student.\n\n**New Fields:**\n- `locale`: Language preference for email notifications (en, de, ru). Defaults to 'en'."
+						"description": "Creates a new student.\n\n**locale**: Language preference for email notifications (en, de, ru). Defaults to 'en'."
 					},
 					"response": []
 				},
@@ -413,9 +413,9 @@
 							"raw": "{\n  \"id\": \"{{studentId}}\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"dateOfBirth\": \"1998-03-15\",\n  \"coins\": 300.00,\n  \"locale\": \"de\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"raw": "{{backend_host}}/api/v1/students/{{studentId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -424,7 +424,7 @@
 								"{{studentId}}"
 							]
 						},
-						"description": "Updates an existing student.\n\n**New Fields:**\n- `locale`: Language preference for email notifications (en, de, ru)"
+						"description": "Updates an existing student."
 					},
 					"response": []
 				},
@@ -444,9 +444,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students/{{studentId}}",
+							"raw": "{{backend_host}}/api/v1/students/{{studentId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -474,9 +474,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/students/{{studentId}}/courses",
+							"raw": "{{backend_host}}/api/v1/students/{{studentId}}/courses",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -510,9 +510,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses",
+							"raw": "{{backend_host}}/api/v1/courses",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -520,7 +520,7 @@
 								"courses"
 							]
 						},
-						"description": "Returns all courses.\n\n**Pagination:** Supports `page`, `size`, `sort` query parameters"
+						"description": "Returns all courses."
 					},
 					"response": []
 				},
@@ -540,9 +540,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses?page=0&size=10&sort=title,asc",
+							"raw": "{{backend_host}}/api/v1/courses?page=0&size=10&sort=title,asc",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -563,11 +563,11 @@
 								{
 									"key": "sort",
 									"value": "title,asc",
-									"description": "Sort by field and direction (e.g., title,asc or createdAt,desc)"
+									"description": "Sort by field and direction"
 								}
 							]
 						},
-						"description": "Returns paginated courses.\n\n**Pagination Parameters:**\n- `page`: Page number (0-indexed, default: 0)\n- `size`: Number of items per page (default: 20)\n- `sort`: Sort field and direction (e.g., `title,asc`)\n\n**Response includes:**\n- `content`: Array of courses\n- `totalElements`: Total number of courses\n- `totalPages`: Total number of pages\n- `size`: Page size\n- `number`: Current page number"
+						"description": "Returns paginated courses."
 					},
 					"response": []
 				},
@@ -587,9 +587,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -626,9 +626,9 @@
 							"raw": "{\n  \"title\": \"Spring Boot Fundamentals\",\n  \"description\": \"Intro to Spring Boot with REST, JPA, and testing\",\n  \"price\": 99.99,\n  \"coinsPaid\": 10.00,\n  \"startDate\": \"2025-11-10T09:00:00\",\n  \"endDate\": \"2025-12-10T18:00:00\",\n  \"isPublic\": true\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/courses",
+							"raw": "{{backend_host}}/api/v1/courses",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -664,9 +664,9 @@
 							"raw": "{\n  \"id\": \"{{courseId}}\",\n  \"title\": \"Advanced Spring Boot\",\n  \"description\": \"Deep dive into Spring Boot internals\",\n  \"price\": 150.00,\n  \"coinsPaid\": 15.00,\n  \"startDate\": \"2025-11-12T09:00:00\",\n  \"endDate\": \"2025-12-20T18:00:00\",\n  \"isPublic\": false\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -694,9 +694,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -724,9 +724,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -736,7 +736,7 @@
 								"lessons"
 							]
 						},
-						"description": "Returns all lessons for a specific course.\n\n**Lesson Types:**\n- `CLASSROOM`: In-person lesson with location and capacity\n- `VIDEO`: Online lesson with URL and platform\n\n**Response Example:**\n```json\n[\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Live Workshop\",\n    \"duration\": 90,\n    \"lessonType\": \"CLASSROOM\",\n    \"location\": \"Room A101\",\n    \"capacity\": 30\n  },\n  {\n    \"id\": \"uuid\",\n    \"title\": \"Video Tutorial\",\n    \"duration\": 35,\n    \"lessonType\": \"VIDEO\",\n    \"url\": \"https://youtube.com/...\",\n    \"platform\": \"YouTube\"\n  }\n]\n```"
+						"description": "Returns all lessons for a specific course."
 					},
 					"response": []
 				},
@@ -756,9 +756,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -768,8 +768,7 @@
 								"lessons",
 								"{{lessonId}}"
 							]
-						},
-						"description": "Returns a specific lesson by ID."
+						}
 					},
 					"response": []
 				},
@@ -798,9 +797,9 @@
 							"raw": "{\n  \"title\": \"Introduction to Spring Boot\",\n  \"duration\": 45,\n  \"lessonType\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=example123\",\n  \"platform\": \"YouTube\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -809,8 +808,7 @@
 								"{{courseId}}",
 								"lessons"
 							]
-						},
-						"description": "Creates a new VIDEO lesson for a course.\n\n**Required Fields:**\n- `title`: Lesson title\n- `duration`: Duration in minutes\n- `lessonType`: Must be `VIDEO`\n- `url`: Video URL\n- `platform`: Video platform (YouTube, Vimeo, Udemy, etc.)"
+						}
 					},
 					"response": []
 				},
@@ -839,9 +837,9 @@
 							"raw": "{\n  \"title\": \"Hands-on Workshop\",\n  \"duration\": 120,\n  \"lessonType\": \"CLASSROOM\",\n  \"location\": \"Room B202, Training Center\",\n  \"capacity\": 25\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -850,8 +848,7 @@
 								"{{courseId}}",
 								"lessons"
 							]
-						},
-						"description": "Creates a new CLASSROOM lesson for a course.\n\n**Required Fields:**\n- `title`: Lesson title\n- `duration`: Duration in minutes\n- `lessonType`: Must be `CLASSROOM`\n- `location`: Physical location/room\n- `capacity`: Maximum number of attendees"
+						}
 					},
 					"response": []
 				},
@@ -880,9 +877,9 @@
 							"raw": "{\n  \"title\": \"Updated Video Tutorial\",\n  \"duration\": 60,\n  \"lessonType\": \"VIDEO\",\n  \"url\": \"https://www.youtube.com/watch?v=updated123\",\n  \"platform\": \"YouTube\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -892,8 +889,7 @@
 								"lessons",
 								"{{lessonId}}"
 							]
-						},
-						"description": "Updates an existing lesson.\n\n**Note:** The lesson type cannot be changed. Update fields according to the existing lesson type (VIDEO or CLASSROOM)."
+						}
 					},
 					"response": []
 				},
@@ -913,9 +909,9 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
+							"raw": "{{backend_host}}/api/v1/courses/{{courseId}}/lessons/{{lessonId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -925,8 +921,7 @@
 								"lessons",
 								"{{lessonId}}"
 							]
-						},
-						"description": "Deletes a lesson from a course."
+						}
 					},
 					"response": []
 				}
@@ -951,9 +946,9 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/api/v1/enrollments/purchase?studentId={{studentId}}&courseId={{courseId}}",
+							"raw": "{{backend_host}}/api/v1/enrollments/purchase?studentId={{studentId}}&courseId={{courseId}}",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"api",
@@ -989,9 +984,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/health",
+							"raw": "{{backend_host}}/actuator/health",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
@@ -1011,9 +1006,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/info",
+							"raw": "{{backend_host}}/actuator/info",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
@@ -1040,9 +1035,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/loggers",
+							"raw": "{{backend_host}}/actuator/loggers",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
@@ -1069,17 +1064,16 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/loggers/com.lms.mentoring",
+							"raw": "{{backend_host}}/actuator/loggers/com.lms.mentoring",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
 								"loggers",
 								"com.lms.mentoring"
 							]
-						},
-						"description": "Returns the log level for a specific logger. Requires authentication."
+						}
 					},
 					"response": []
 				},
@@ -1108,17 +1102,16 @@
 							"raw": "{\n  \"configuredLevel\": \"DEBUG\"\n}"
 						},
 						"url": {
-							"raw": "{{host}}/actuator/loggers/com.lms.mentoring",
+							"raw": "{{backend_host}}/actuator/loggers/com.lms.mentoring",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
 								"loggers",
 								"com.lms.mentoring"
 							]
-						},
-						"description": "Dynamically changes the log level at runtime. Supported levels: TRACE, DEBUG, INFO, WARN, ERROR, OFF. Requires authentication."
+						}
 					},
 					"response": []
 				},
@@ -1138,16 +1131,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{host}}/actuator/metrics",
+							"raw": "{{backend_host}}/actuator/metrics",
 							"host": [
-								"{{host}}"
+								"{{backend_host}}"
 							],
 							"path": [
 								"actuator",
 								"metrics"
 							]
-						},
-						"description": "Returns available metrics. Requires authentication."
+						}
 					},
 					"response": []
 				}
