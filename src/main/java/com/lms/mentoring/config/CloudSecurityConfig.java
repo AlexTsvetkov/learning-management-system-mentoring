@@ -70,7 +70,34 @@ public class CloudSecurityConfig {
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
+    /**
+     * Security filter chain for SaaS Provisioning Service callback endpoints.
+     * This filter chain completely bypasses JWT validation since the SaaS Provisioning Service
+     * sends tokens from different identity zones that cannot be validated by our XSUAA.
+     * Order 1 means this filter chain is evaluated first.
+     */
     @Bean
+    @org.springframework.core.annotation.Order(1)
+    public SecurityFilterChain callbackSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/callback/v1.0/**")
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().permitAll()
+                );
+        
+        return http.build();
+    }
+
+    /**
+     * Main security filter chain for all other endpoints.
+     * Order 2 means this filter chain is evaluated after the callback filter chain.
+     */
+    @Bean
+    @org.springframework.core.annotation.Order(2)
     public SecurityFilterChain cloudSecurityFilterChain(HttpSecurity http, 
                                                          XsuaaServiceConfiguration xsuaaServiceConfiguration) throws Exception {
         http
@@ -88,11 +115,6 @@ public class CloudSecurityConfig {
                         .requestMatchers("/actuator/info").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
-                        
-                        // SaaS Provisioning Service callback endpoints - permit all
-                        // SAP BTP SaaS Provisioning Service uses technical user with Callback scope
-                        // but the scope format varies, so we permit these endpoints
-                        .requestMatchers("/callback/v1.0/**").permitAll()
                         
                         // Application info endpoint - requires admin scope (enforced via @PreAuthorize)
                         .requestMatchers("/api/v1/application-info/**").authenticated()
