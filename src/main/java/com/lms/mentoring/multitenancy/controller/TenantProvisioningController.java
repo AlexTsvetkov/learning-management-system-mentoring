@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,23 +32,16 @@ public class TenantProvisioningController {
     @Value("${APPROUTER_URL:}")
     private String approuterBaseUrl;
 
-    @Value("${vcap.application.name:learning-management-system}")
-    private String applicationName;
-
-    @Value("${vcap.application.application_id:}")
-    private String applicationId;
-
-    @Value("${vcap.application.space_name:}")
-    private String spaceName;
-
     /**
-     * Returns application info and the list of dependencies required for tenant subscription.
+     * Returns the list of dependencies required for tenant subscription.
      * Called by SaaS Provisioning Service before subscription.
-     * Returns XSUAA dependency information for the SaaS Registry.
+     * 
+     * Returns empty array as we don't have external reuse service dependencies.
+     * XSUAA is automatically handled as it's bound to the app.
      */
     @Operation(
         summary = "Get dependencies",
-        description = "Returns list of service dependencies and app info required for tenant subscription"
+        description = "Returns list of service dependencies required for tenant subscription"
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Dependencies returned successfully")
@@ -58,18 +51,11 @@ public class TenantProvisioningController {
             @RequestParam(value = "tenantId", required = false) String tenantId) {
         log.info("Dependencies requested by SaaS Provisioning Service for tenantId: {}", tenantId);
         
-        // Return XSUAA as dependency - required for SaaS multitenancy
-        Map<String, Object> xsuaaDependency = new HashMap<>();
-        xsuaaDependency.put("xsappname", "learning-management-system");
-        xsuaaDependency.put("appName", applicationName);
-        xsuaaDependency.put("applicationId", applicationId);
-        xsuaaDependency.put("spaceName", spaceName);
-        xsuaaDependency.put("approuterUrl", approuterBaseUrl);
-        xsuaaDependency.put("backendUrl", "https://" + applicationUri);
+        // Return empty array - no external reuse service dependencies
+        // XSUAA is automatically handled as it's bound to the app
+        List<Map<String, Object>> dependencies = Collections.emptyList();
         
-        List<Map<String, Object>> dependencies = List.of(xsuaaDependency);
-        
-        log.debug("Returning {} dependencies: {}", dependencies.size(), dependencies);
+        log.debug("Returning {} dependencies", dependencies.size());
         return ResponseEntity.ok(dependencies);
     }
 
