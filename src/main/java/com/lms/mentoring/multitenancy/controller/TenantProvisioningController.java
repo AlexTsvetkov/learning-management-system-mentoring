@@ -47,12 +47,9 @@ public class TenantProvisioningController {
     public ResponseEntity<List<Map<String, Object>>> getDependencies() {
         log.info("Dependencies requested by SaaS Provisioning Service");
         
-        // Return XSUAA as a dependency
-        List<Map<String, Object>> dependencies = List.of(
-            Map.of(
-                "xsappname", "learning-management-system"
-            )
-        );
+        // Return empty array - no external service dependencies
+        // XSUAA is automatically handled as it's bound to the app
+        List<Map<String, Object>> dependencies = Collections.emptyList();
         
         log.debug("Returning {} dependencies", dependencies.size());
         return ResponseEntity.ok(dependencies);
