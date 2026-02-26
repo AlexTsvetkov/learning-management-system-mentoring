@@ -227,7 +227,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{xsuaa_access_token}}",
+									"value": "{{subscriber_access_token}}",
 									"type": "string"
 								}
 							]
@@ -245,7 +245,7 @@
 								"tenant-context"
 							]
 						},
-						"description": "Returns tenant context via subscriber route.\n\n**Compare the response with provider tenant context to see the difference.**"
+						"description": "Returns tenant context via subscriber route.\n\n**Uses subscriber_access_token** (run 'Get Subscriber Token' first)\n\n**Compare the response with provider tenant context to see the difference.**\n\nExpected: isSubscriber=true, isProvider=false, different tenantId"
 					},
 					"response": []
 				},
@@ -1449,7 +1449,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{xsuaa_access_token}}",
+									"value": "{{subscriber_access_token}}",
 									"type": "string"
 								}
 							]
@@ -1467,7 +1467,7 @@
 								"students"
 							]
 						},
-						"description": "Get students via subscriber tenant's approuter."
+						"description": "Get students via subscriber tenant's schema.\n\n**Uses subscriber_access_token** (run 'Get Subscriber Token' first)\n\n**Note:** This returns data from the subscriber's isolated schema (TENANT_xxx), NOT the provider's PUBLIC schema. New subscribers start with empty data."
 					},
 					"response": []
 				},
@@ -1479,7 +1479,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{xsuaa_access_token}}",
+									"value": "{{subscriber_access_token}}",
 									"type": "string"
 								}
 							]
@@ -1497,7 +1497,7 @@
 								"courses"
 							]
 						},
-						"description": "Get courses via subscriber tenant's approuter."
+						"description": "Get courses via subscriber tenant's schema.\n\n**Uses subscriber_access_token** (run 'Get Subscriber Token' first)\n\n**Note:** This returns data from the subscriber's isolated schema (TENANT_xxx), NOT the provider's PUBLIC schema. New subscribers start with empty data."
 					},
 					"response": []
 				}
