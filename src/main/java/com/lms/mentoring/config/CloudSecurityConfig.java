@@ -1,8 +1,12 @@
 package com.lms.mentoring.config;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sap.cloud.security.config.CredentialType;
 import com.sap.cloud.security.xsuaa.XsuaaServiceConfiguration;
-import com.sap.cloud.security.xsuaa.XsuaaServiceConfigurationDefault;
 import com.sap.cloud.security.xsuaa.token.TokenAuthenticationConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -37,13 +41,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity(prePostEnabled = true)
 public class CloudSecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(CloudSecurityConfig.class);
+
     /**
      * Creates XsuaaServiceConfiguration bean that reads XSUAA credentials from VCAP_SERVICES.
-     * This is automatically populated when running on Cloud Foundry.
+     * This implementation manually parses VCAP_SERVICES to ensure proper reading of credentials.
      */
     @Bean
     public XsuaaServiceConfiguration xsuaaServiceConfiguration() {
-        return new XsuaaServiceConfigurationDefault();
+        return new VcapXsuaaServiceConfiguration();
     }
 
     /**
@@ -52,7 +58,15 @@ public class CloudSecurityConfig {
      */
     @Bean
     public JwtDecoder jwtDecoder(XsuaaServiceConfiguration xsuaaServiceConfiguration) {
-        String jwkSetUri = xsuaaServiceConfiguration.getUaaUrl() + "/token_keys";
+        String uaaUrl = xsuaaServiceConfiguration.getUaaUrl();
+        log.info("Creating JWT Decoder with UAA URL: {}", uaaUrl);
+        
+        if (uaaUrl == null || uaaUrl.isBlank()) {
+            throw new IllegalStateException("XSUAA URL is not configured. Check VCAP_SERVICES binding.");
+        }
+        
+        String jwkSetUri = uaaUrl + "/token_keys";
+        log.info("JWK Set URI: {}", jwkSetUri);
         return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
@@ -113,5 +127,119 @@ public class CloudSecurityConfig {
         // Extract authorities from scopes claim
         converter.setLocalScopeAsAuthorities(true);
         return converter;
+    }
+
+    /**
+     * Custom XsuaaServiceConfiguration that reads from VCAP_SERVICES environment variable.
+     * This ensures proper parsing of XSUAA credentials on Cloud Foundry.
+     */
+    private static class VcapXsuaaServiceConfiguration implements XsuaaServiceConfiguration {
+        private final String url;
+        private final String clientId;
+        private final String clientSecret;
+        private final String xsAppName;
+        private final String uaaDomain;
+        private final String verificationKey;
+
+        public VcapXsuaaServiceConfiguration() {
+            String vcapServices = System.getenv("VCAP_SERVICES");
+            log.info("Reading XSUAA configuration from VCAP_SERVICES");
+            
+            if (vcapServices == null || vcapServices.isBlank()) {
+                log.warn("VCAP_SERVICES environment variable is not set");
+                this.url = null;
+                this.clientId = null;
+                this.clientSecret = null;
+                this.xsAppName = null;
+                this.uaaDomain = null;
+                this.verificationKey = null;
+                return;
+            }
+
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode vcapNode = mapper.readTree(vcapServices);
+                JsonNode xsuaaArray = vcapNode.get("xsuaa");
+                
+                if (xsuaaArray == null || !xsuaaArray.isArray() || xsuaaArray.isEmpty()) {
+                    log.warn("No XSUAA service found in VCAP_SERVICES");
+                    this.url = null;
+                    this.clientId = null;
+                    this.clientSecret = null;
+                    this.xsAppName = null;
+                    this.uaaDomain = null;
+                    this.verificationKey = null;
+                    return;
+                }
+
+                JsonNode xsuaaService = xsuaaArray.get(0);
+                JsonNode credentials = xsuaaService.get("credentials");
+                
+                if (credentials == null) {
+                    log.warn("No credentials found in XSUAA service");
+                    this.url = null;
+                    this.clientId = null;
+                    this.clientSecret = null;
+                    this.xsAppName = null;
+                    this.uaaDomain = null;
+                    this.verificationKey = null;
+                    return;
+                }
+
+                this.url = getTextValue(credentials, "url");
+                this.clientId = getTextValue(credentials, "clientid");
+                this.clientSecret = getTextValue(credentials, "clientsecret");
+                this.xsAppName = getTextValue(credentials, "xsappname");
+                this.uaaDomain = getTextValue(credentials, "uaadomain");
+                this.verificationKey = getTextValue(credentials, "verificationkey");
+                
+                log.info("XSUAA Configuration loaded - URL: {}, ClientID: {}, AppName: {}", 
+                        this.url, this.clientId, this.xsAppName);
+                
+            } catch (Exception e) {
+                log.error("Failed to parse VCAP_SERVICES for XSUAA configuration", e);
+                throw new IllegalStateException("Failed to parse XSUAA configuration from VCAP_SERVICES", e);
+            }
+        }
+
+        private String getTextValue(JsonNode node, String field) {
+            JsonNode fieldNode = node.get(field);
+            return fieldNode != null && !fieldNode.isNull() ? fieldNode.asText() : null;
+        }
+
+        @Override
+        public String getClientId() {
+            return clientId;
+        }
+
+        @Override
+        public String getClientSecret() {
+            return clientSecret;
+        }
+
+        @Override
+        public String getUaaUrl() {
+            return url;
+        }
+
+        @Override
+        public String getAppId() {
+            return xsAppName;
+        }
+
+        @Override
+        public String getUaaDomain() {
+            return uaaDomain;
+        }
+
+        @Override
+        public String getVerificationKey() {
+            return verificationKey;
+        }
+
+        @Override
+        public CredentialType getCredentialType() {
+            return CredentialType.BINDING_SECRET;
+        }
     }
 }
