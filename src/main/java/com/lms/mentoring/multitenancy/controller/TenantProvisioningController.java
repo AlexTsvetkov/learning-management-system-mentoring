@@ -127,17 +127,14 @@ public class TenantProvisioningController {
 
     /**
      * Builds the tenant-specific approuter URL.
-     * Format: https://{subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info
+     * SAP BTP expects the URL in format: https://{subdomain}-{approuter-host-suffix}
+     * The subdomain from subscription payload is already unique per tenant.
      */
     private String buildTenantUrl(String subdomain) {
-        // If APPROUTER_URL is configured, use it as base
-        if (approuterBaseUrl != null && !approuterBaseUrl.isEmpty()) {
-            // Replace the pattern with tenant-specific subdomain
-            return approuterBaseUrl.replace("lms-approuter", subdomain + "-lms-approuter");
-        }
-        
-        // Default pattern: https://{subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com
-        String baseUrl = "https://" + subdomain + "-lms-approuter.cfapps.us10-001.hana.ondemand.com";
-        return baseUrl + "/api/v1/application-info";
+        // For SAP BTP multitenancy, return approuter URL with tenant subdomain
+        // The platform will route requests to the appropriate tenant based on subdomain
+        String baseUrl = "https://" + subdomain + "-dev-lms-approuter.cfapps.us10-001.hana.ondemand.com";
+        log.debug("Built tenant URL: {}", baseUrl);
+        return baseUrl;
     }
 }
