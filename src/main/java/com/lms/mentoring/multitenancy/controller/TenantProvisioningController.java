@@ -1,10 +1,13 @@
 package com.lms.mentoring.multitenancy.controller;
 
+import com.lms.mentoring.multitenancy.TenantContext;
+import com.lms.mentoring.multitenancy.TenantSchemaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -23,8 +26,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/callback/v1.0")
 @Profile("cloud")
+@RequiredArgsConstructor
 @Tag(name = "Tenant Provisioning", description = "SaaS Provisioning Service subscription callbacks")
 public class TenantProvisioningController {
+
+    private final TenantSchemaService tenantSchemaService;
 
     @Value("${vcap.application.uris[0]:localhost}")
     private String applicationUri;
@@ -89,6 +95,19 @@ public class TenantProvisioningController {
             subdomain = (String) subscriptionPayload.get("subscribedSubdomain");
         }
         
+        // Create tenant-specific database schema and run migrations
+        String schemaName = TenantContext.toSchemaName(tenantId);
+        log.info("Creating schema {} for tenant {} (subdomain: {})", schemaName, tenantId, subdomain);
+        
+        try {
+            tenantSchemaService.createTenantSchema(tenantId);
+            log.info("Schema {} created successfully for tenant {}", schemaName, tenantId);
+        } catch (Exception e) {
+            log.error("Failed to create schema for tenant {}: {}", tenantId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body("Failed to create tenant schema: " + e.getMessage());
+        }
+        
         // Build tenant-specific approuter URL
         String tenantUrl = buildTenantUrl(subdomain);
         
@@ -116,10 +135,17 @@ public class TenantProvisioningController {
         
         log.info("Tenant unsubscription request received for tenantId: {}", tenantId);
         
-        // In a real implementation, you would:
-        // 1. Clean up tenant-specific data
-        // 2. Remove tenant-specific database schemas (if using schema-per-tenant)
-        // 3. Revoke tenant-specific access
+        // Drop tenant-specific database schema
+        String schemaName = TenantContext.toSchemaName(tenantId);
+        log.info("Dropping schema {} for tenant {}", schemaName, tenantId);
+        
+        try {
+            tenantSchemaService.dropTenantSchema(tenantId);
+            log.info("Schema {} dropped successfully for tenant {}", schemaName, tenantId);
+        } catch (Exception e) {
+            log.warn("Failed to drop schema for tenant {}: {}", tenantId, e.getMessage());
+            // Don't fail unsubscription if schema drop fails
+        }
         
         log.info("Tenant {} unsubscribed successfully", tenantId);
         

@@ -81,9 +81,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.HANAColumnStoreDialect
         show_sql: false
+  # Disable automatic Liquibase - we run it per-tenant during subscription
   liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: false
 
 # SAP BTP Services Configuration
 # These values are populated from VCAP_SERVICES when bound to services
