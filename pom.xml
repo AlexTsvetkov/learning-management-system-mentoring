@@ -38,6 +38,7 @@
 
         <!-- Logging -->
         <logback.contrib.version>0.1.5</logback.contrib.version>
+        <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
 
         <!-- Maven Plugins -->
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
@@ -171,14 +172,9 @@
 
         <!-- SAP Application Logging (JSON encoder for Logback) -->
         <dependency>
-            <groupId>ch.qos.logback.contrib</groupId>
-            <artifactId>logback-json-classic</artifactId>
-            <version>${logback.contrib.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback.contrib</groupId>
-            <artifactId>logback-jackson</artifactId>
-            <version>${logback.contrib.version}</version>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback-encoder.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
