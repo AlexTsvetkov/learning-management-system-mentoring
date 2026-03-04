@@ -214,6 +214,22 @@ cf deploy mta_archives/learning-management-system_0.1.0.mtar
 cf deploy learning-management-system.mtar
 ```
 
+#### Step 5.1: Map Subscriber Routes (Important!)
+
+After deployment, map the subscriber tenant route to the approuter:
+
+```bash
+# Run the post-deployment script to map subscriber routes
+./scripts/post-deploy-routes.sh
+
+# Or with custom subdomain
+./scripts/post-deploy-routes.sh my-subscriber-tenant
+```
+
+This maps `lms-subscriber-pekroa1q.cfapps.us10-001.hana.ondemand.com` to the `lms-approuter` app.
+
+> **Note:** The MTA deployment resets approuter routes each time. Run this script after every deployment to restore subscriber routes.
+
 #### Deployment Options
 
 ```bash
@@ -763,6 +779,51 @@ curl -X POST "https://{xsuaa-url}/oauth/token" \
 # 2. Call application-info endpoint
 curl -X GET "https://lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info" \
   -H "Authorization: Bearer {access_token}"
+```
+
+---
+
+## Helper Scripts
+
+The project includes several helper scripts in the `scripts/` directory:
+
+| Script | Description |
+|--------|-------------|
+| `scripts/post-deploy-routes.sh` | Maps subscriber routes after MTA deployment |
+| `scripts/deploy-with-routes.sh` | Full deploy + route mapping in one command |
+| `scripts/update-postman-env.sh` | Updates Postman environment with XSUAA credentials |
+
+### Post-Deployment Route Mapping
+
+After MTA deployment, subscriber tenant routes are reset. Use this script to restore them:
+
+```bash
+# Map default subscriber route (lms-subscriber-pekroa1q)
+./scripts/post-deploy-routes.sh
+
+# Map custom subscriber subdomain
+./scripts/post-deploy-routes.sh my-tenant-subdomain
+```
+
+### Full Deployment with Routes
+
+Deploy and map routes in a single command:
+
+```bash
+# Build, deploy, and map routes
+mvn package -P cloud -DskipTests && mbt build
+./scripts/deploy-with-routes.sh
+
+# Or with custom subdomain
+./scripts/deploy-with-routes.sh my-tenant
+```
+
+### Update Postman Environment
+
+Automatically extract XSUAA credentials and update the Postman environment:
+
+```bash
+./scripts/update-postman-env.sh
 ```
 
 ---

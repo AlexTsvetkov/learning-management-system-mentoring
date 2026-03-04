@@ -18,6 +18,7 @@ FEATURE_FLAGS_KEY_NAME="lms-feature-flags-key"
 SMTP_USER_PROVIDED_SERVICE_NAME="lms-smtp-credentials"
 XSUAA_SERVICE_NAME="lms-xsuaa"
 SAAS_REGISTRY_SERVICE_NAME="lms-saas-registry"
+SERVICE_MANAGER_SERVICE_NAME="lms-service-manager"
 
 # Function to extract JSON from cf service-key output
 extract_service_key_json() {
@@ -191,52 +192,53 @@ echo "Creating SAP BTP Services..."
 echo ""
 
 # 1. SAP HANA Cloud Database (schema plan for trial)
-echo "[1/7] HANA DB Service"
+echo "[1/9] HANA DB Service"
 # Note: For trial accounts, use 'hana' service with 'schema' plan
 # For productive accounts, use 'hana-cloud' service with appropriate plan
 create_service_if_not_exists "hana-cloud" "hana-free" "$HANA_SERVICE_NAME"
 
 # 2. Application Logging Service
 echo ""
-echo "[2/7] Application Logging Service"
+echo "[2/9] Application Logging Service"
 create_service_if_not_exists "application-logs" "lite" "$LOGGING_SERVICE_NAME"
 
 # 3. Application Autoscaler
 echo ""
-echo "[3/7] Application Autoscaler Service"
+echo "[3/9] Application Autoscaler Service"
 create_service_if_not_exists "autoscaler" "standard" "$AUTOSCALER_SERVICE_NAME"
 
 # 4. Destination Service
 echo ""
-echo "[4/7] Destination Service"
+echo "[4/9] Destination Service"
 create_service_if_not_exists "destination" "lite" "$DESTINATION_SERVICE_NAME"
 
 # 5. Feature Flags Service
 echo ""
-echo "[5/7] Feature Flags Service"
+echo "[5/9] Feature Flags Service"
 create_service_if_not_exists "feature-flags" "lite" "$FEATURE_FLAGS_SERVICE_NAME"
 
 # 6. XSUAA Service (OAuth2 Authentication)
 echo ""
-echo "[6/7] XSUAA Service (OAuth2)"
+echo "[6/9] XSUAA Service (OAuth2)"
 # Create XSUAA service using xs-security.json configuration
+# NOTE: Using 'broker' plan for SaaS multitenancy support
 if cf service "$XSUAA_SERVICE_NAME" &> /dev/null; then
     echo "✓ Service '$XSUAA_SERVICE_NAME' already exists"
 else
-    echo "Creating service '$XSUAA_SERVICE_NAME' (xsuaa - application)..."
+    echo "Creating service '$XSUAA_SERVICE_NAME' (xsuaa - broker)..."
     if [ -f "xs-security.json" ]; then
-        cf create-service xsuaa application "$XSUAA_SERVICE_NAME" -c xs-security.json
+        cf create-service xsuaa broker "$XSUAA_SERVICE_NAME" -c xs-security.json
         echo "✓ Service '$XSUAA_SERVICE_NAME' created"
     else
         echo "⚠ xs-security.json not found. Creating XSUAA with default config..."
-        cf create-service xsuaa application "$XSUAA_SERVICE_NAME"
+        cf create-service xsuaa broker "$XSUAA_SERVICE_NAME"
         echo "✓ Service '$XSUAA_SERVICE_NAME' created (default config)"
     fi
 fi
 
 # 7. SaaS Provisioning Service (SaaS Registry)
 echo ""
-echo "[7/8] SaaS Registry Service (Multitenancy)"
+echo "[7/9] SaaS Registry Service (Multitenancy)"
 # Create SaaS Registry service for marketplace registration
 if cf service "$SAAS_REGISTRY_SERVICE_NAME" &> /dev/null; then
     echo "✓ Service '$SAAS_REGISTRY_SERVICE_NAME' already exists"
@@ -251,9 +253,14 @@ else
     fi
 fi
 
-# 8. User-Provided Service for SMTP Credentials
+# 8. Service Manager Service (for dynamic tenant schema management)
 echo ""
-echo "[8/8] User-Provided SMTP Credentials Service"
+echo "[8/9] Service Manager Service"
+create_service_if_not_exists "service-manager" "container" "$SERVICE_MANAGER_SERVICE_NAME"
+
+# 9. User-Provided Service for SMTP Credentials
+echo ""
+echo "[9/9] User-Provided SMTP Credentials Service"
 # SMTP credentials for Mailtrap
 SMTP_CREDENTIALS='{
   "host": "sandbox.smtp.mailtrap.io",
