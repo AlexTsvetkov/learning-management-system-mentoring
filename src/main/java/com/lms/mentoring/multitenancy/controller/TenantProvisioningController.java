@@ -83,7 +83,7 @@ public class TenantProvisioningController {
             dependencies.add(destinationDependency);
             log.info("Adding Destination service dependency: {}", destinationXsappname);
         } else {
-            log.info("Destination service xsappname not available, returning empty dependencies");
+            log.warn("Destination service xsappname not available, returning empty dependencies");
         }
         
         log.info("Returning {} dependencies for tenant {}", dependencies.size(), tenantId);

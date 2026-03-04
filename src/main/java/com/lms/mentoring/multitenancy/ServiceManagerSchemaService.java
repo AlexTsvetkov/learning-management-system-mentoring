@@ -75,7 +75,7 @@ public class ServiceManagerSchemaService {
         // Try to get HANA database ID - if not available, schema plan won't work
         String databaseId = getHanaDatabaseId();
         if (databaseId == null) {
-            log.info("HANA database_id not available (likely hana-free plan). " +
+            log.warn("HANA database_id not available (likely hana-free plan). " +
                     "Skipping Service Manager schema creation - using direct SQL approach.");
             // Return a tracking ID - actual schema will be created by TenantSchemaService
             return "direct-schema-" + tenantId.substring(0, Math.min(8, tenantId.length()));
@@ -219,7 +219,7 @@ public class ServiceManagerSchemaService {
     private String getHanaDatabaseId() {
         String vcapServices = System.getenv("VCAP_SERVICES");
         if (vcapServices == null) {
-            log.info("VCAP_SERVICES not available");
+            log.warn("VCAP_SERVICES not available");
             return null;
         }
         
@@ -230,7 +230,7 @@ public class ServiceManagerSchemaService {
             
             List<Map<String, Object>> hanaServices = services.get("hana-cloud");
             if (hanaServices == null || hanaServices.isEmpty()) {
-                log.info("No hana-cloud service binding found");
+                log.warn("No hana-cloud service binding found");
                 return null;
             }
             

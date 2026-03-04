@@ -91,7 +91,7 @@ public class TenantAwareDestinationService {
                     return destination;
                 }
             } catch (DestinationNotFoundException e) {
-                log.info("Destination '{}' not found in subscriber subaccount {}, falling back to provider", 
+                log.warn("Destination '{}' not found in subscriber subaccount {}, falling back to provider", 
                         destinationName, currentTenant);
             } catch (Exception e) {
                 log.warn("Error fetching destination '{}' from subscriber subaccount {}: {}. Falling back to provider.", 

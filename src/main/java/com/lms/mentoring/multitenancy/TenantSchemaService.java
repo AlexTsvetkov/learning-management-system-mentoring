@@ -115,7 +115,7 @@ public class TenantSchemaService {
                 }
             } catch (SQLException e) {
                 // Fall back to standard INFORMATION_SCHEMA for H2/other databases
-                log.info("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
+                log.warn("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
                 var rs = stmt.executeQuery(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + schemaName + "'"
                 );
@@ -147,7 +147,7 @@ public class TenantSchemaService {
                 rs.close();
             } catch (SQLException e) {
                 // Fall back to INFORMATION_SCHEMA for H2/other databases
-                log.info("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
+                log.warn("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
                 var rs = stmt.executeQuery(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + schemaName + "'"
                 );

@@ -134,7 +134,7 @@ public class TenantConnectionProvider implements MultiTenantConnectionProvider<S
                 return exists;
             } catch (SQLException e) {
                 // Fall back to INFORMATION_SCHEMA for H2/other databases
-                log.info("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
+                log.warn("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
                 ResultSet rs = stmt.executeQuery(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + schemaName + "'"
                 );

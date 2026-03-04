@@ -129,7 +129,7 @@ public class EmailTemplateService {
         try {
             ClassPathResource resource = new ClassPathResource(templatePath);
             if (!resource.exists()) {
-                log.info("Template not found at path: {}", templatePath);
+                log.warn("Template not found at path: {}", templatePath);
                 return null;
             }
             Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8);
