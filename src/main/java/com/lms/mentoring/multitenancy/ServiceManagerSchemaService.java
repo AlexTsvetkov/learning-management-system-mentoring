@@ -12,6 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,23 +44,41 @@ public class ServiceManagerSchemaService {
     /**
      * Creates a HANA schema for a tenant via Service Manager.
      * 
+     * For hana-free plan, Service Manager may not support creating schema service instances.
+     * In this case, we register the tenant in Service Manager for tracking purposes
+     * and let TenantSchemaService handle the actual schema creation via SQL.
+     * 
      * @param tenantId the tenant ID
      * @param subdomain the tenant subdomain
-     * @return the service instance ID
+     * @return the service instance ID or tenant tracking ID
      */
     public String createTenantSchema(String tenantId, String subdomain) {
         log.info("Creating HANA schema via Service Manager for tenant: {}", tenantId);
         
-        ensureCredentials();
-        String token = getAccessToken();
+        try {
+            ensureCredentials();
+        } catch (Exception e) {
+            log.warn("Service Manager not available, skipping Service Manager registration: {}", e.getMessage());
+            return "local-" + tenantId;
+        }
         
-        String instanceName = "lms-hana-" + tenantId.substring(0, 8);
+        String token = getAccessToken();
+        String instanceName = "lms-hana-" + tenantId.substring(0, Math.min(8, tenantId.length()));
         
         // Check if instance already exists
         Optional<String> existingInstance = findServiceInstance(token, instanceName);
         if (existingInstance.isPresent()) {
-            log.info("Schema already exists for tenant {}: {}", tenantId, existingInstance.get());
+            log.info("Schema already registered for tenant {}: {}", tenantId, existingInstance.get());
             return existingInstance.get();
+        }
+        
+        // Try to get HANA database ID - if not available, schema plan won't work
+        String databaseId = getHanaDatabaseId();
+        if (databaseId == null) {
+            log.info("HANA database_id not available (likely hana-free plan). " +
+                    "Skipping Service Manager schema creation - using direct SQL approach.");
+            // Return a tracking ID - actual schema will be created by TenantSchemaService
+            return "direct-schema-" + tenantId.substring(0, Math.min(8, tenantId.length()));
         }
         
         // Create new service instance
@@ -68,21 +87,20 @@ public class ServiceManagerSchemaService {
         headers.setBearerAuth(token);
         
         // Service instance parameters for HANA schema
-        Map<String, Object> parameters = Map.of(
-            "database_id", getHanaDatabaseId(),
-            "schema", TenantContext.toSchemaName(tenantId)
-        );
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("database_id", databaseId);
+        parameters.put("schema", TenantContext.toSchemaName(tenantId));
         
-        Map<String, Object> body = Map.of(
-            "name", instanceName,
-            "service_offering_name", "hana",
-            "service_plan_name", "schema",
-            "parameters", parameters,
-            "labels", Map.of(
-                "tenant_id", List.of(tenantId),
-                "subdomain", List.of(subdomain)
-            )
-        );
+        Map<String, Object> labels = new HashMap<>();
+        labels.put("tenant_id", List.of(tenantId));
+        labels.put("subdomain", List.of(subdomain));
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("name", instanceName);
+        body.put("service_offering_name", "hana");
+        body.put("service_plan_name", "schema");
+        body.put("parameters", parameters);
+        body.put("labels", labels);
         
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
         
@@ -99,11 +117,14 @@ public class ServiceManagerSchemaService {
                 log.info("Created HANA schema instance {} for tenant {}", instanceId, tenantId);
                 return instanceId;
             } else {
-                throw new RuntimeException("Failed to create schema: " + response.getStatusCode());
+                log.warn("Service Manager schema creation returned: {}. Using direct SQL approach.", 
+                        response.getStatusCode());
+                return "direct-schema-" + tenantId.substring(0, Math.min(8, tenantId.length()));
             }
         } catch (Exception e) {
-            log.error("Failed to create HANA schema for tenant {}: {}", tenantId, e.getMessage(), e);
-            throw new RuntimeException("Failed to create tenant schema via Service Manager", e);
+            log.warn("Service Manager schema creation failed: {}. Using direct SQL approach.", e.getMessage());
+            // Don't throw - fall back to direct SQL schema creation
+            return "direct-schema-" + tenantId.substring(0, Math.min(8, tenantId.length()));
         }
     }
 
@@ -193,11 +214,13 @@ public class ServiceManagerSchemaService {
 
     /**
      * Gets the HANA database ID from VCAP_SERVICES.
+     * Returns null if not available (e.g., hana-free plan doesn't provide database_id).
      */
     private String getHanaDatabaseId() {
         String vcapServices = System.getenv("VCAP_SERVICES");
         if (vcapServices == null) {
-            throw new IllegalStateException("VCAP_SERVICES not available");
+            log.debug("VCAP_SERVICES not available");
+            return null;
         }
         
         try {
@@ -207,14 +230,21 @@ public class ServiceManagerSchemaService {
             
             List<Map<String, Object>> hanaServices = services.get("hana-cloud");
             if (hanaServices == null || hanaServices.isEmpty()) {
-                throw new IllegalStateException("No hana-cloud service binding found");
+                log.debug("No hana-cloud service binding found");
+                return null;
             }
             
             Map<String, Object> hanaCredentials = (Map<String, Object>) hanaServices.get(0).get("credentials");
-            return (String) hanaCredentials.get("database_id");
+            String databaseId = (String) hanaCredentials.get("database_id");
+            
+            if (databaseId == null) {
+                log.debug("database_id not present in HANA credentials (likely hana-free plan)");
+            }
+            
+            return databaseId;
         } catch (Exception e) {
-            log.error("Failed to get HANA database ID: {}", e.getMessage());
-            throw new RuntimeException("Failed to get HANA database ID", e);
+            log.warn("Failed to get HANA database ID: {}", e.getMessage());
+            return null;
         }
     }
 
