@@ -94,6 +94,13 @@ public class TenantProvisioningController {
      * Handles tenant subscription.
      * Called by SaaS Provisioning Service when a tenant subscribes to the application.
      * Returns the tenant-specific URL to access the application.
+     *
+     * Subscription Flow:
+     * 1. SaaS Registry calls PUT /callback/v1.0/tenants/{tenantId}
+     * 2. ServiceManagerSchemaService attempts Service Manager schema creation
+     *    → Falls back to direct SQL if hana-free plan detected
+     * 3. TenantSchemaService runs Liquibase migrations
+     * 4. Returns tenant-specific URL
      */
     @Operation(
         summary = "Subscribe tenant",
