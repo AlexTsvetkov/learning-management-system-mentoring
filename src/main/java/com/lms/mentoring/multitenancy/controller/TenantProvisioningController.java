@@ -83,7 +83,7 @@ public class TenantProvisioningController {
             dependencies.add(destinationDependency);
             log.info("Adding Destination service dependency: {}", destinationXsappname);
         } else {
-            log.debug("Destination service xsappname not available, returning empty dependencies");
+            log.info("Destination service xsappname not available, returning empty dependencies");
         }
         
         log.info("Returning {} dependencies for tenant {}", dependencies.size(), tenantId);
@@ -118,7 +118,7 @@ public class TenantProvisioningController {
         log.info("Tenant subscription request received for tenantId: {}", tenantId);
         
         if (subscriptionPayload != null) {
-            log.debug("Subscription payload: {}", subscriptionPayload);
+            log.info("Subscription payload: {}", subscriptionPayload);
         }
         
         // Extract subdomain from payload if available

@@ -45,7 +45,7 @@ public class VcapSmtpCredentialsProvider implements SmtpCredentialsProvider {
     @Override
     @Cacheable(value = "smtpCredentials", key = "'vcap'")
     public SmtpCredentials getCredentials() {
-        log.debug("Retrieving SMTP credentials from VCAP_SERVICES for service: {}", serviceName);
+        log.info("Retrieving SMTP credentials from VCAP_SERVICES for service: {}", serviceName);
         
         if (vcapServices == null || vcapServices.isBlank()) {
             throw new SmtpCredentialsException("VCAP_SERVICES environment variable is not set");

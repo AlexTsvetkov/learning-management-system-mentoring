@@ -45,9 +45,9 @@ public class TenantFilter extends OncePerRequestFilter {
             
             if (tenantId != null) {
                 TenantContext.setCurrentTenant(tenantId);
-                log.debug("Tenant context set to: {} for path: {}", tenantId, request.getRequestURI());
+                log.info("Tenant context set to: {} for path: {}", tenantId, request.getRequestURI());
             } else {
-                log.debug("No tenant found, using default for path: {}", request.getRequestURI());
+                log.info("No tenant found, using default for path: {}", request.getRequestURI());
             }
             
             filterChain.doFilter(request, response);
@@ -75,7 +75,7 @@ public class TenantFilter extends OncePerRequestFilter {
                 // Check if this is the provider tenant
                 // Provider tenant should use default schema (null tenant ID)
                 if (isProviderTenant(jwt, zid)) {
-                    log.debug("Provider tenant detected ({}), using default schema", zid);
+                    log.info("Provider tenant detected ({}), using default schema", zid);
                     return TenantContext.DEFAULT_TENANT;
                 }
                 
@@ -93,11 +93,11 @@ public class TenantFilter extends OncePerRequestFilter {
     private boolean isProviderTenant(Jwt jwt, String zid) {
         // Simple check: if providerTenantId (from VCAP zoneid) matches zid, it's provider
         if (providerTenantId != null && !providerTenantId.isEmpty() && providerTenantId.equals(zid)) {
-            log.debug("Provider tenant matched: {} == {}", providerTenantId, zid);
+            log.info("Provider tenant matched: {} == {}", providerTenantId, zid);
             return true;
         }
         
-        log.debug("Tenant {} is NOT provider (provider={})", zid, providerTenantId);
+        log.info("Tenant {} is NOT provider (provider={})", zid, providerTenantId);
         return false;
     }
 

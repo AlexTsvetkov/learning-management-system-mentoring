@@ -35,7 +35,7 @@ public class TenantContext {
      * @param tenantId the tenant ID to set
      */
     public static void setCurrentTenant(String tenantId) {
-        log.debug("Setting current tenant to: {}", tenantId);
+        log.info("Setting current tenant to: {}", tenantId);
         CURRENT_TENANT.set(tenantId);
     }
 
@@ -43,7 +43,7 @@ public class TenantContext {
      * Clear the current tenant (call this at the end of request processing).
      */
     public static void clear() {
-        log.debug("Clearing tenant context");
+        log.info("Clearing tenant context");
         CURRENT_TENANT.remove();
     }
 

@@ -206,7 +206,7 @@ public class ServiceManagerSchemaService {
                     .map(ServiceInstanceResponse::getId);
             }
         } catch (Exception e) {
-            log.debug("Error finding service instance: {}", e.getMessage());
+            log.info("Error finding service instance: {}", e.getMessage());
         }
         
         return Optional.empty();
@@ -219,7 +219,7 @@ public class ServiceManagerSchemaService {
     private String getHanaDatabaseId() {
         String vcapServices = System.getenv("VCAP_SERVICES");
         if (vcapServices == null) {
-            log.debug("VCAP_SERVICES not available");
+            log.info("VCAP_SERVICES not available");
             return null;
         }
         
@@ -230,7 +230,7 @@ public class ServiceManagerSchemaService {
             
             List<Map<String, Object>> hanaServices = services.get("hana-cloud");
             if (hanaServices == null || hanaServices.isEmpty()) {
-                log.debug("No hana-cloud service binding found");
+                log.info("No hana-cloud service binding found");
                 return null;
             }
             
@@ -238,7 +238,7 @@ public class ServiceManagerSchemaService {
             String databaseId = (String) hanaCredentials.get("database_id");
             
             if (databaseId == null) {
-                log.debug("database_id not present in HANA credentials (likely hana-free plan)");
+                log.info("database_id not present in HANA credentials (likely hana-free plan)");
             }
             
             return databaseId;

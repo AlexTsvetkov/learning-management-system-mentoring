@@ -129,12 +129,12 @@ public class EmailTemplateService {
         try {
             ClassPathResource resource = new ClassPathResource(templatePath);
             if (!resource.exists()) {
-                log.debug("Template not found at path: {}", templatePath);
+                log.info("Template not found at path: {}", templatePath);
                 return null;
             }
             Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8);
             Mustache template = mustacheFactory.compile(reader, templatePath);
-            log.debug("Loaded template: {}", templatePath);
+            log.info("Loaded template: {}", templatePath);
             return template;
         } catch (Exception e) {
             log.error("Failed to load template: {}", templatePath, e);

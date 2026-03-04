@@ -70,7 +70,7 @@ public class TenantConnectionProvider implements MultiTenantConnectionProvider<S
             
             try (Statement stmt = connection.createStatement()) {
                 stmt.execute("SET SCHEMA \"" + schemaName + "\"");
-                log.debug("Switched to schema: {} for tenant: {}", schemaName, tenantId);
+                log.info("Switched to schema: {} for tenant: {}", schemaName, tenantId);
             } catch (SQLException e) {
                 log.error("Failed to switch to schema {} for tenant {}: {}", 
                     schemaName, tenantId, e.getMessage());
@@ -84,7 +84,7 @@ public class TenantConnectionProvider implements MultiTenantConnectionProvider<S
                     stmt.execute("SET SCHEMA \"" + defaultSchema + "\"");
                 }
             }
-            log.debug("Using default schema for tenant: {}", tenantId);
+            log.info("Using default schema for tenant: {}", tenantId);
         }
         
         return connection;
@@ -134,7 +134,7 @@ public class TenantConnectionProvider implements MultiTenantConnectionProvider<S
                 return exists;
             } catch (SQLException e) {
                 // Fall back to INFORMATION_SCHEMA for H2/other databases
-                log.debug("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
+                log.info("HANA schema check failed, trying INFORMATION_SCHEMA: {}", e.getMessage());
                 ResultSet rs = stmt.executeQuery(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '" + schemaName + "'"
                 );

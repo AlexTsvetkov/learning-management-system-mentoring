@@ -85,7 +85,7 @@ public class DestinationSmtpCredentialsProvider implements SmtpCredentialsProvid
     )
     public SmtpCredentials getCredentials() {
         String currentTenant = TenantContext.getCurrentTenant();
-        log.debug("Retrieving SMTP credentials from Destination Service for destination: {}, tenant: {}", 
+        log.info("Retrieving SMTP credentials from Destination Service for destination: {}, tenant: {}", 
                 destinationName, currentTenant);
         
         try {

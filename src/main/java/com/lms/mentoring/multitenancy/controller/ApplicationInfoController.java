@@ -70,7 +70,7 @@ public class ApplicationInfoController {
                 .tenantId(tenantId)
                 .build();
         
-        log.debug("Returning application info for xsappname: {}", xsappname);
+        log.info("Returning application info for xsappname: {}", xsappname);
         return ResponseEntity.ok(info);
     }
 }

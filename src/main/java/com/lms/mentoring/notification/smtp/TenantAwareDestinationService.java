@@ -75,7 +75,7 @@ public class TenantAwareDestinationService {
         boolean isSubscriber = !TenantContext.DEFAULT_TENANT.equals(currentTenant) 
                 && !currentTenant.equals(providerTenantId);
         
-        log.debug("Fetching destination '{}' for tenant: {} (isSubscriber: {})", 
+        log.info("Fetching destination '{}' for tenant: {} (isSubscriber: {})", 
                 destinationName, currentTenant, isSubscriber);
         
         if (isSubscriber) {
@@ -133,7 +133,7 @@ public class TenantAwareDestinationService {
         if (tenantId != null && !tenantId.equals(providerTenantId)) {
             // The X-tenant-id header tells the Destination Service which tenant's destinations to look up
             headers.set("X-tenant-id", tenantId);
-            log.debug("Added X-tenant-id header: {}", tenantId);
+            log.info("Added X-tenant-id header: {}", tenantId);
         }
         
         HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
@@ -191,7 +191,7 @@ public class TenantAwareDestinationService {
                 // For subscriber tokens, we might need to use their XSUAA URL
                 // However, with XSUAA broker plan, we can use the same credentials
                 // and the destination service will handle tenant context via X-tenant-id header
-                log.debug("Getting token for subscriber tenant: {}", tenantId);
+                log.info("Getting token for subscriber tenant: {}", tenantId);
             }
             
             String body = "grant_type=client_credentials";
