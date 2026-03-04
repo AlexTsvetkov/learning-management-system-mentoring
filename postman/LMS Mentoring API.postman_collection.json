@@ -305,7 +305,7 @@
 								"dependencies"
 							]
 						},
-						"description": "Returns the list of service dependencies required for tenant subscription.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope (granted to SaaS provisioning service).\n\n**Target:** Backend directly (not through Approuter) - SaaS Registry calls this URL.\n\n**Response:**\n```json\n[\n  {\n    \"xsappname\": \"learning-management-system\"\n  }\n]\n```\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service, not by end users."
+						"description": "Returns the list of service dependencies required for tenant subscription.\n\n**Called by SaaS Provisioning Service** - Requires `Callback` scope (granted to SaaS provisioning service).\n\n**Target:** Backend directly (not through Approuter) - SaaS Registry calls this URL.\n\n**Response (Stage 6 - Advanced Multitenancy):**\n```json\n[\n  {\n    \"xsappname\": \"destination-xsappname!b12345\"\n  }\n]\n```\n\n**Why Destination Service dependency?**\n- Enables subscribers to configure their own destinations (e.g., SMTP credentials)\n- Subscriber creates a destination with the same name as provider (e.g., `lms-smtp`)\n- Application automatically uses subscriber's destination when they access the app\n- Falls back to provider's destination if not found\n\n**Note:** This endpoint is typically called by SAP BTP SaaS Provisioning Service, not by end users."
 					},
 					"response": []
 				},

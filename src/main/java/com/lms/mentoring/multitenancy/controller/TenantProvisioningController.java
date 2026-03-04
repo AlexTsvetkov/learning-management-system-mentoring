@@ -14,7 +14,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,15 +40,24 @@ public class TenantProvisioningController {
     private String approuterBaseUrl;
 
     /**
+     * Destination service xsappname for dependency declaration.
+     * This is populated from VCAP_SERVICES when destination service is bound.
+     */
+    @Value("${vcap.services.lms-destination.credentials.xsappname:#{null}}")
+    private String destinationXsappname;
+
+    /**
      * Returns the list of dependencies required for tenant subscription.
      * Called by SaaS Provisioning Service before subscription.
      * 
-     * Returns empty array as we don't have external reuse service dependencies.
-     * XSUAA is automatically handled as it's bound to the app.
+     * For multitenancy, we declare the Destination service as a dependency so that
+     * subscribers can configure their own destinations (e.g., SMTP credentials).
+     * When a subscriber subscribes, their subaccount must have entitlement to these services.
      */
     @Operation(
         summary = "Get dependencies",
-        description = "Returns list of service dependencies required for tenant subscription"
+        description = "Returns list of service dependencies required for tenant subscription. " +
+                "Currently returns Destination service xsappname for multitenant destination configuration."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Dependencies returned successfully")
@@ -57,11 +67,20 @@ public class TenantProvisioningController {
             @RequestParam(value = "tenantId", required = false) String tenantId) {
         log.info("Dependencies requested by SaaS Provisioning Service for tenantId: {}", tenantId);
         
-        // Return empty array - no external reuse service dependencies
-        // XSUAA is automatically handled as it's bound to the app
-        List<Map<String, Object>> dependencies = Collections.emptyList();
+        List<Map<String, Object>> dependencies = new ArrayList<>();
         
-        log.debug("Returning {} dependencies", dependencies.size());
+        // Add Destination service dependency if xsappname is available
+        // This enables subscribers to configure their own destinations
+        if (destinationXsappname != null && !destinationXsappname.isBlank()) {
+            Map<String, Object> destinationDependency = new HashMap<>();
+            destinationDependency.put("xsappname", destinationXsappname);
+            dependencies.add(destinationDependency);
+            log.info("Adding Destination service dependency: {}", destinationXsappname);
+        } else {
+            log.debug("Destination service xsappname not available, returning empty dependencies");
+        }
+        
+        log.info("Returning {} dependencies for tenant {}", dependencies.size(), tenantId);
         return ResponseEntity.ok(dependencies);
     }
 

@@ -2,10 +2,9 @@ package com.lms.mentoring.notification.smtp;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.cloud.security.xsuaa.client.OAuth2TokenResponse;
-import com.sap.cloud.security.xsuaa.tokenflows.ClientCredentialsTokenFlow;
-import com.sap.cloud.security.xsuaa.tokenflows.XsuaaTokenFlows;
+import com.lms.mentoring.multitenancy.TenantContext;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Profile;
@@ -16,21 +15,24 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
 import java.util.Base64;
 
 /**
  * SMTP credentials provider that retrieves credentials from SAP BTP Destination Service.
  * 
- * This provider:
- * 1. Gets OAuth2 token from XSUAA service
- * 2. Calls Destination Service API to retrieve destination configuration
- * 3. Extracts SMTP credentials from the destination properties
+ * This provider supports MULTITENANCY:
+ * 1. For subscriber tenants: First tries to fetch destination from subscriber's subaccount
+ * 2. If not found: Falls back to provider's subaccount
  * 
  * The destination should be configured in SAP BTP Cockpit with:
  * - Type: MAIL
- * - Name: as configured in sap.smtp.destination.name
+ * - Name: as configured in sap.smtp.destination.name (e.g., "lms-smtp")
  * - Properties: mail.smtp.host, mail.smtp.port, mail.user, mail.password, mail.from
+ * 
+ * To configure subscriber-specific SMTP:
+ * 1. Subscriber creates a Destination service instance in their subaccount
+ * 2. Subscriber creates a destination with the same name (e.g., "lms-smtp")
+ * 3. Application automatically uses subscriber's destination when they access the app
  * 
  * Retry is configured to handle transient network failures.
  */
@@ -39,26 +41,29 @@ import java.util.Base64;
 @Slf4j
 public class DestinationSmtpCredentialsProvider implements SmtpCredentialsProvider {
     
-    private static final String PROVIDER_NAME = "SAP Destination Service";
+    private static final String PROVIDER_NAME = "SAP Destination Service (Tenant-Aware)";
     private static final String DEFAULT_FROM = "no-reply@lms.example.com";
     
     private final String destinationServiceUri;
     private final String destinationName;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
+    private final TenantAwareDestinationService tenantAwareDestinationService;
     
     // VCAP credentials for destination service
     private final String clientId;
     private final String clientSecret;
     private final String tokenUrl;
     
+    @Autowired
     public DestinationSmtpCredentialsProvider(
             @Value("${sap.destination.service.uri:#{null}}") String destinationServiceUri,
             @Value("${sap.smtp.destination.name:lms-smtp}") String destinationName,
             @Value("${sap.destination.service.clientid:#{null}}") String clientId,
             @Value("${sap.destination.service.clientsecret:#{null}}") String clientSecret,
             @Value("${sap.destination.service.url:#{null}}") String tokenUrl,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            TenantAwareDestinationService tenantAwareDestinationService) {
         this.destinationServiceUri = destinationServiceUri;
         this.destinationName = destinationName;
         this.clientId = clientId;
@@ -66,50 +71,42 @@ public class DestinationSmtpCredentialsProvider implements SmtpCredentialsProvid
         this.tokenUrl = tokenUrl;
         this.objectMapper = objectMapper;
         this.restTemplate = new RestTemplate();
+        this.tenantAwareDestinationService = tenantAwareDestinationService;
+        
+        log.info("DestinationSmtpCredentialsProvider initialized with tenant-aware destination lookup");
     }
     
     @Override
-    @Cacheable(value = "smtpCredentials", key = "'destination'")
+    @Cacheable(value = "smtpCredentials", key = "'destination-' + T(com.lms.mentoring.multitenancy.TenantContext).getCurrentTenant()")
     @Retryable(
             retryFor = {RestClientException.class, SmtpCredentialsException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public SmtpCredentials getCredentials() {
-        log.debug("Retrieving SMTP credentials from Destination Service for destination: {}", destinationName);
+        String currentTenant = TenantContext.getCurrentTenant();
+        log.debug("Retrieving SMTP credentials from Destination Service for destination: {}, tenant: {}", 
+                destinationName, currentTenant);
         
         try {
-            // Get OAuth2 token
-            String accessToken = getAccessToken();
+            // Use tenant-aware destination service to fetch destination
+            // This will try subscriber's subaccount first, then fall back to provider
+            JsonNode destinationResponse = tenantAwareDestinationService.getDestination(destinationName);
             
-            // Call Destination Service API
-            String destinationUrl = buildDestinationUrl();
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(accessToken);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                    destinationUrl,
-                    HttpMethod.GET,
-                    requestEntity,
-                    String.class
-            );
-            
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new SmtpCredentialsException("Failed to retrieve destination: " + response.getStatusCode());
+            if (destinationResponse == null) {
+                throw new SmtpCredentialsException(
+                        "Destination '" + destinationName + "' not found in any subaccount (tenant: " + currentTenant + ")");
             }
             
             // Parse destination response
-            return parseDestinationResponse(response.getBody());
+            return parseDestinationResponse(destinationResponse);
             
         } catch (SmtpCredentialsException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to retrieve SMTP credentials from Destination Service", e);
-            throw new SmtpCredentialsException("Failed to retrieve SMTP credentials from Destination Service: " + e.getMessage(), e);
+            log.error("Failed to retrieve SMTP credentials from Destination Service for tenant {}", currentTenant, e);
+            throw new SmtpCredentialsException(
+                    "Failed to retrieve SMTP credentials from Destination Service: " + e.getMessage(), e);
         }
     }
     
@@ -118,52 +115,14 @@ public class DestinationSmtpCredentialsProvider implements SmtpCredentialsProvid
         return PROVIDER_NAME;
     }
     
-    private String getAccessToken() {
-        if (clientId == null || clientSecret == null || tokenUrl == null) {
-            throw new SmtpCredentialsException("Destination service credentials not configured (clientId, clientSecret, or tokenUrl missing)");
-        }
-        
+    /**
+     * Parses the destination response from the Destination Service.
+     * 
+     * @param root the JSON response from the Destination Service
+     * @return SmtpCredentials extracted from the destination
+     */
+    private SmtpCredentials parseDestinationResponse(JsonNode root) {
         try {
-            String credentials = Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes());
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.set("Authorization", "Basic " + credentials);
-            
-            String body = "grant_type=client_credentials";
-            HttpEntity<String> request = new HttpEntity<>(body, headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                    tokenUrl + "/oauth/token",
-                    HttpMethod.POST,
-                    request,
-                    String.class
-            );
-            
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new SmtpCredentialsException("Failed to get OAuth token: " + response.getStatusCode());
-            }
-            
-            JsonNode tokenResponse = objectMapper.readTree(response.getBody());
-            return tokenResponse.path("access_token").asText();
-            
-        } catch (SmtpCredentialsException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new SmtpCredentialsException("Failed to get OAuth token: " + e.getMessage(), e);
-        }
-    }
-    
-    private String buildDestinationUrl() {
-        if (destinationServiceUri == null || destinationServiceUri.isBlank()) {
-            throw new SmtpCredentialsException("Destination service URI not configured");
-        }
-        return destinationServiceUri + "/destination-configuration/v1/destinations/" + destinationName;
-    }
-    
-    private SmtpCredentials parseDestinationResponse(String responseBody) {
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
             JsonNode destinationConfig = root.path("destinationConfiguration");
             
             if (destinationConfig.isMissingNode()) {
