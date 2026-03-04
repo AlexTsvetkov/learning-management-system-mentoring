@@ -68,87 +68,29 @@ The **SaaS Registry** service:
 
 ---
 
-## Multitenancy Package Structure
+## Package Structure (Stage 5 - Basics)
 
-The `com.lms.mentoring.multitenancy` package contains all classes required for multi-tenant support:
+Stage 5 focuses on the **infrastructure** for multitenancy. The Java classes for tenant isolation (TenantContext, TenantFilter, etc.) are implemented in **Stage 6**.
 
 ```
 com.lms.mentoring.multitenancy/
-├── TenantContext.java              # Thread-local tenant storage
-├── TenantFilter.java               # JWT tenant extraction filter
-├── TenantConnectionProvider.java   # Hibernate schema switching
-├── TenantIdentifierResolver.java   # Hibernate tenant resolution
-├── TenantSchemaService.java        # Schema creation/migration
-├── TenantSchemaInitializer.java    # Provider schema initialization
 ├── controller/
-│   ├── ApplicationInfoController.java   # XSUAA credentials (Admin)
-│   ├── TenantContextController.java     # Current tenant info
-│   └── TenantProvisioningController.java # SaaS callbacks
+│   ├── ApplicationInfoController.java   # XSUAA credentials (Admin) [Stage 5]
+│   ├── TenantContextController.java     # Current tenant info [Stage 5]
+│   └── TenantProvisioningController.java # SaaS callbacks [Stage 5]
 └── dto/
-    └── ApplicationInfoDto.java     # XSUAA credentials DTO
+    └── ApplicationInfoDto.java          # XSUAA credentials DTO [Stage 5]
+
+# The following are implemented in Stage 6:
+# ├── TenantContext.java
+# ├── TenantFilter.java
+# ├── TenantConnectionProvider.java
+# ├── TenantIdentifierResolver.java
+# ├── TenantSchemaService.java
+# └── TenantSchemaInitializer.java
 ```
 
-### Class Details
-
-#### TenantContext
-
-Thread-local storage for the current tenant ID. Ensures tenant isolation across concurrent requests.
-
-| Method | Description |
-|--------|-------------|
-| `getCurrentTenant()` | Returns current tenant ID, or `DEFAULT_TENANT` ("PROVIDER") if none set |
-| `setCurrentTenant(String)` | Sets tenant ID for current thread |
-| `clear()` | Removes tenant context (call at end of request to prevent memory leaks) |
-| `isSet()` | Checks if a tenant is explicitly set |
-| `toSchemaName(String)` | Converts tenant UUID to HANA schema: `TENANT_<first 8 chars uppercase>` |
-
-#### TenantFilter
-
-Spring Security filter that extracts tenant identity from JWT tokens (XSUAA).
-
-| Method | Description |
-|--------|-------------|
-| `doFilterInternal()` | Extracts tenant from JWT `zid` claim, sets TenantContext, clears in finally block |
-| `extractTenantFromSecurityContext()` | Gets `zid` claim; returns DEFAULT_TENANT for provider |
-| `isProviderTenant()` | Compares JWT's zid against providerTenantId from VCAP_SERVICES |
-| `shouldNotFilter()` | Skips `/actuator/`, `/callback/`, and `/` paths |
-
-#### TenantConnectionProvider
-
-Implements Hibernate's `MultiTenantConnectionProvider<String>` for schema-based multi-tenancy.
-
-| Method | Description |
-|--------|-------------|
-| `getConnection(String tenantId)` | Gets connection and executes `SET SCHEMA <schema>` |
-| `releaseConnection(String, Connection)` | Resets to default schema before returning to pool |
-| `getAnyConnection()` | Returns raw connection without tenant context |
-
-#### TenantIdentifierResolver
-
-Implements Hibernate's `CurrentTenantIdentifierResolver<String>` interface.
-
-| Method | Description |
-|--------|-------------|
-| `resolveCurrentTenantIdentifier()` | Delegates to `TenantContext.getCurrentTenant()` |
-| `validateExistingCurrentSessions()` | Returns `true` for session validation |
-
-#### TenantSchemaService
-
-Manages tenant-specific database schemas with Liquibase migrations.
-
-| Method | Description |
-|--------|-------------|
-| `createTenantSchema(String tenantId)` | Creates schema and runs Liquibase migrations |
-| `dropTenantSchema(String tenantId)` | Drops schema with CASCADE |
-| `schemaExists(String tenantId)` | Checks schema existence (supports HANA and H2) |
-
-#### TenantSchemaInitializer
-
-Initializes the provider (default) schema on application startup.
-
-| Method | Description |
-|--------|-------------|
-| `initializeProviderSchema()` | Runs on `ApplicationReadyEvent`; executes Liquibase for provider schema |
+### Controllers (Stage 5)
 
 #### ApplicationInfoController
 
@@ -156,34 +98,79 @@ Admin-only endpoint exposing XSUAA credentials.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/application-info` | GET | Returns XSUAA credentials (tokenUrl, clientId, clientSecret, xsappname, identityZone, tenantId) |
+| `/api/v1/application-info` | GET | Returns XSUAA credentials (tokenUrl, clientId, clientSecret, xsappname, identityZone) |
 
-Uses Spring's `@Value` annotation to read credentials from VCAP_SERVICES:
 ```java
-@Value("${vcap.services.lms-xsuaa.credentials.url:}")
-private String xsuaaUrl;
-
-@Value("${vcap.services.lms-xsuaa.credentials.clientid:}")
-private String clientId;
+@RestController
+@RequestMapping("/api/v1")
+@Profile("cloud")
+public class ApplicationInfoController {
+    
+    @Value("${vcap.services.lms-xsuaa.credentials.url:}")
+    private String xsuaaUrl;
+    
+    @Value("${vcap.services.lms-xsuaa.credentials.clientid:}")
+    private String clientId;
+    
+    @Value("${vcap.services.lms-xsuaa.credentials.clientsecret:}")
+    private String clientSecret;
+    
+    @GetMapping("/application-info")
+    @PreAuthorize("hasAuthority('SCOPE_admin')")
+    public ApplicationInfoDto getApplicationInfo() {
+        return new ApplicationInfoDto(xsuaaUrl + "/oauth/token", clientId, clientSecret, ...);
+    }
+}
 ```
-
-#### TenantContextController
-
-Debug endpoint showing current tenant context from JWT token.
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/tenant-context` | GET | Returns tenant info extracted from JWT (zid, subdomain, clientId, scopes) |
 
 #### TenantProvisioningController
 
-Handles SaaS Provisioning Service callbacks for tenant lifecycle.
+Handles SaaS subscription callbacks. **Note:** Schema creation is implemented in Stage 6.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/callback/v1.0/dependencies` | GET | Returns service dependencies (empty array) |
-| `/callback/v1.0/tenants/{tenantId}` | PUT | Subscription: creates schema, returns tenant URL |
-| `/callback/v1.0/tenants/{tenantId}` | DELETE | Unsubscription: drops tenant schema |
+| `/callback/v1.0/dependencies` | GET | Returns empty array (no dependencies) |
+| `/callback/v1.0/tenants/{tenantId}` | PUT | Subscription: returns tenant URL |
+| `/callback/v1.0/tenants/{tenantId}` | DELETE | Unsubscription: logs the event |
+
+```java
+@RestController
+@RequestMapping("/callback/v1.0")
+@Profile("cloud")
+public class TenantProvisioningController {
+    
+    @Value("${APPROUTER_URL:}")
+    private String approuterUrl;
+    
+    @GetMapping("/dependencies")
+    public List<Object> getDependencies() {
+        return Collections.emptyList();
+    }
+    
+    @PutMapping("/tenants/{tenantId}")
+    public ResponseEntity<String> onSubscription(
+            @PathVariable String tenantId,
+            @RequestBody Map<String, Object> payload) {
+        
+        String subdomain = (String) payload.get("subscribedSubdomain");
+        log.info("Tenant {} subscribed with subdomain: {}", tenantId, subdomain);
+        
+        // Stage 5: Just return tenant URL
+        // Stage 6: Will add schema creation
+        String tenantUrl = buildTenantUrl(subdomain);
+        return ResponseEntity.ok(tenantUrl);
+    }
+    
+    @DeleteMapping("/tenants/{tenantId}")
+    public ResponseEntity<Void> onUnsubscription(@PathVariable String tenantId) {
+        log.info("Tenant {} unsubscribed", tenantId);
+        
+        // Stage 5: Just log
+        // Stage 6: Will add schema deletion
+        return ResponseEntity.ok().build();
+    }
+}
+```
 
 ---
 
