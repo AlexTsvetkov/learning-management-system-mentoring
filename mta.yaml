@@ -72,6 +72,7 @@ modules:
       - name: lms-application-autoscaler
       - name: lms-smtp-credentials
       - name: lms-saas-registry
+      - name: lms-service-manager
       - name: lms-approuter-url
 
 resources:
@@ -148,6 +149,14 @@ resources:
       service: autoscaler
       service-plan: standard
       service-name: lms-application-autoscaler
+
+  # Service Manager - For dynamic tenant schema management
+  - name: lms-service-manager
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: service-manager
+      service-plan: container
+      service-name: lms-service-manager
 
   # User-Provided SMTP Credentials Service
   - name: lms-smtp-credentials

@@ -1,5 +1,6 @@
 package com.lms.mentoring.multitenancy.controller;
 
+import com.lms.mentoring.multitenancy.ServiceManagerSchemaService;
 import com.lms.mentoring.multitenancy.TenantContext;
 import com.lms.mentoring.multitenancy.TenantSchemaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +23,10 @@ import java.util.Map;
 /**
  * Controller handling SaaS Provisioning Service subscription callbacks.
  * Handles tenant onboarding (subscription) and offboarding (unsubscription).
+ * 
+ * Schema Management Strategy:
+ * - Uses ServiceManagerSchemaService to create/delete HANA schemas via Service Manager API
+ * - Uses TenantSchemaService to run Liquibase migrations after schema creation
  */
 @Slf4j
 @RestController
@@ -32,6 +37,7 @@ import java.util.Map;
 public class TenantProvisioningController {
 
     private final TenantSchemaService tenantSchemaService;
+    private final ServiceManagerSchemaService serviceManagerSchemaService;
 
     @Value("${vcap.application.uris[0]:localhost}")
     private String applicationUri;
@@ -114,13 +120,22 @@ public class TenantProvisioningController {
             subdomain = (String) subscriptionPayload.get("subscribedSubdomain");
         }
         
-        // Create tenant-specific database schema and run migrations
+        // Create tenant-specific database schema via Service Manager and run migrations
         String schemaName = TenantContext.toSchemaName(tenantId);
         log.info("Creating schema {} for tenant {} (subdomain: {})", schemaName, tenantId, subdomain);
         
         try {
+            // Step 1: Create HANA schema via Service Manager API
+            log.info("Creating HANA schema via Service Manager for tenant {}", tenantId);
+            serviceManagerSchemaService.createTenantSchema(tenantId, subdomain);
+            log.info("HANA schema created via Service Manager for tenant {}", tenantId);
+            
+            // Step 2: Run Liquibase migrations for the new schema
+            log.info("Running Liquibase migrations for tenant {} schema {}", tenantId, schemaName);
             tenantSchemaService.createTenantSchema(tenantId);
-            log.info("Schema {} created successfully for tenant {}", schemaName, tenantId);
+            log.info("Liquibase migrations completed for tenant {}", tenantId);
+            
+            log.info("Schema {} created and migrated successfully for tenant {}", schemaName, tenantId);
         } catch (Exception e) {
             log.error("Failed to create schema for tenant {}: {}", tenantId, e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -154,13 +169,14 @@ public class TenantProvisioningController {
         
         log.info("Tenant unsubscription request received for tenantId: {}", tenantId);
         
-        // Drop tenant-specific database schema
+        // Drop tenant-specific database schema via Service Manager
         String schemaName = TenantContext.toSchemaName(tenantId);
         log.info("Dropping schema {} for tenant {}", schemaName, tenantId);
         
         try {
-            tenantSchemaService.dropTenantSchema(tenantId);
-            log.info("Schema {} dropped successfully for tenant {}", schemaName, tenantId);
+            // Delete HANA schema via Service Manager API
+            serviceManagerSchemaService.deleteTenantSchema(tenantId);
+            log.info("Schema {} dropped successfully via Service Manager for tenant {}", schemaName, tenantId);
         } catch (Exception e) {
             log.warn("Failed to drop schema for tenant {}: {}", tenantId, e.getMessage());
             // Don't fail unsubscription if schema drop fails
