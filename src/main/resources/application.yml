@@ -81,9 +81,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.HANAColumnStoreDialect
         show_sql: false
+  # Disable automatic Liquibase - we run it per-tenant during subscription
   liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: false
 
 # SAP BTP Services Configuration
 # These values are populated from VCAP_SERVICES when bound to services
@@ -112,14 +112,14 @@ sap:
       clientsecret: ${vcap.services.lms-destination.credentials.clientsecret:}
       url: ${vcap.services.lms-destination.credentials.url:}
   # Feature Flags Service Configuration
+  # Note: 'lite' plan uses Basic Auth (username/password), not OAuth (clientid/clientsecret)
   feature-flags:
     service:
       name: lms-feature-flags
       # These are populated from VCAP_SERVICES binding
       uri: ${vcap.services.lms-feature-flags.credentials.uri:}
-      clientid: ${vcap.services.lms-feature-flags.credentials.clientid:}
-      clientsecret: ${vcap.services.lms-feature-flags.credentials.clientsecret:}
-      url: ${vcap.services.lms-feature-flags.credentials.url:}
+      username: ${vcap.services.lms-feature-flags.credentials.username:}
+      password: ${vcap.services.lms-feature-flags.credentials.password:}
   # SMTP Configuration
   smtp:
     # User-provided service name for SMTP credentials

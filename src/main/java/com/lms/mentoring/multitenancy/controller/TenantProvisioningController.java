@@ -1,30 +1,43 @@
 package com.lms.mentoring.multitenancy.controller;
 
+import com.lms.mentoring.multitenancy.ServiceManagerSchemaService;
+import com.lms.mentoring.multitenancy.TenantContext;
+import com.lms.mentoring.multitenancy.TenantSchemaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Controller handling SaaS Provisioning Service subscription callbacks.
  * Handles tenant onboarding (subscription) and offboarding (unsubscription).
+ * 
+ * Schema Management Strategy:
+ * - Uses ServiceManagerSchemaService to create/delete HANA schemas via Service Manager API
+ * - Uses TenantSchemaService to run Liquibase migrations after schema creation
  */
 @Slf4j
 @RestController
 @RequestMapping("/callback/v1.0")
 @Profile("cloud")
+@RequiredArgsConstructor
 @Tag(name = "Tenant Provisioning", description = "SaaS Provisioning Service subscription callbacks")
 public class TenantProvisioningController {
+
+    private final TenantSchemaService tenantSchemaService;
+    private final ServiceManagerSchemaService serviceManagerSchemaService;
 
     @Value("${vcap.application.uris[0]:localhost}")
     private String applicationUri;
@@ -33,28 +46,47 @@ public class TenantProvisioningController {
     private String approuterBaseUrl;
 
     /**
+     * Destination service xsappname for dependency declaration.
+     * This is populated from VCAP_SERVICES when destination service is bound.
+     */
+    @Value("${vcap.services.lms-destination.credentials.xsappname:#{null}}")
+    private String destinationXsappname;
+
+    /**
      * Returns the list of dependencies required for tenant subscription.
      * Called by SaaS Provisioning Service before subscription.
+     * 
+     * For multitenancy, we declare the Destination service as a dependency so that
+     * subscribers can configure their own destinations (e.g., SMTP credentials).
+     * When a subscriber subscribes, their subaccount must have entitlement to these services.
      */
     @Operation(
         summary = "Get dependencies",
-        description = "Returns list of service dependencies required for tenant subscription"
+        description = "Returns list of service dependencies required for tenant subscription. " +
+                "Currently returns Destination service xsappname for multitenant destination configuration."
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Dependencies returned successfully")
     })
     @GetMapping("/dependencies")
-    public ResponseEntity<List<Map<String, Object>>> getDependencies() {
-        log.info("Dependencies requested by SaaS Provisioning Service");
+    public ResponseEntity<List<Map<String, Object>>> getDependencies(
+            @RequestParam(value = "tenantId", required = false) String tenantId) {
+        log.info("Dependencies requested by SaaS Provisioning Service for tenantId: {}", tenantId);
         
-        // Return XSUAA as a dependency
-        List<Map<String, Object>> dependencies = List.of(
-            Map.of(
-                "xsappname", "learning-management-system"
-            )
-        );
+        List<Map<String, Object>> dependencies = new ArrayList<>();
         
-        log.debug("Returning {} dependencies", dependencies.size());
+        // Add Destination service dependency if xsappname is available
+        // This enables subscribers to configure their own destinations
+        if (destinationXsappname != null && !destinationXsappname.isBlank()) {
+            Map<String, Object> destinationDependency = new HashMap<>();
+            destinationDependency.put("xsappname", destinationXsappname);
+            dependencies.add(destinationDependency);
+            log.info("Adding Destination service dependency: {}", destinationXsappname);
+        } else {
+            log.debug("Destination service xsappname not available, returning empty dependencies");
+        }
+        
+        log.info("Returning {} dependencies for tenant {}", dependencies.size(), tenantId);
         return ResponseEntity.ok(dependencies);
     }
 
@@ -88,6 +120,28 @@ public class TenantProvisioningController {
             subdomain = (String) subscriptionPayload.get("subscribedSubdomain");
         }
         
+        // Create tenant-specific database schema via Service Manager and run migrations
+        String schemaName = TenantContext.toSchemaName(tenantId);
+        log.info("Creating schema {} for tenant {} (subdomain: {})", schemaName, tenantId, subdomain);
+        
+        try {
+            // Step 1: Create HANA schema via Service Manager API
+            log.info("Creating HANA schema via Service Manager for tenant {}", tenantId);
+            serviceManagerSchemaService.createTenantSchema(tenantId, subdomain);
+            log.info("HANA schema created via Service Manager for tenant {}", tenantId);
+            
+            // Step 2: Run Liquibase migrations for the new schema
+            log.info("Running Liquibase migrations for tenant {} schema {}", tenantId, schemaName);
+            tenantSchemaService.createTenantSchema(tenantId);
+            log.info("Liquibase migrations completed for tenant {}", tenantId);
+            
+            log.info("Schema {} created and migrated successfully for tenant {}", schemaName, tenantId);
+        } catch (Exception e) {
+            log.error("Failed to create schema for tenant {}: {}", tenantId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body("Failed to create tenant schema: " + e.getMessage());
+        }
+        
         // Build tenant-specific approuter URL
         String tenantUrl = buildTenantUrl(subdomain);
         
@@ -115,10 +169,18 @@ public class TenantProvisioningController {
         
         log.info("Tenant unsubscription request received for tenantId: {}", tenantId);
         
-        // In a real implementation, you would:
-        // 1. Clean up tenant-specific data
-        // 2. Remove tenant-specific database schemas (if using schema-per-tenant)
-        // 3. Revoke tenant-specific access
+        // Drop tenant-specific database schema via Service Manager
+        String schemaName = TenantContext.toSchemaName(tenantId);
+        log.info("Dropping schema {} for tenant {}", schemaName, tenantId);
+        
+        try {
+            // Delete HANA schema via Service Manager API
+            serviceManagerSchemaService.deleteTenantSchema(tenantId);
+            log.info("Schema {} dropped successfully via Service Manager for tenant {}", schemaName, tenantId);
+        } catch (Exception e) {
+            log.warn("Failed to drop schema for tenant {}: {}", tenantId, e.getMessage());
+            // Don't fail unsubscription if schema drop fails
+        }
         
         log.info("Tenant {} unsubscribed successfully", tenantId);
         
@@ -126,18 +188,34 @@ public class TenantProvisioningController {
     }
 
     /**
-     * Builds the tenant-specific approuter URL.
-     * Format: https://{subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com/api/v1/application-info
+     * Builds the tenant URL for subscription.
+     * 
+     * For SAP BTP Trial accounts: Each tenant gets a dedicated route mapped to the approuter.
+     * Route format: https://{subdomain}.cfapps.{region}.hana.ondemand.com
+     * 
+     * Note: The route must be manually mapped using:
+     * cf map-route lms-approuter cfapps.{region}.hana.ondemand.com --hostname {subdomain}
      */
     private String buildTenantUrl(String subdomain) {
-        // If APPROUTER_URL is configured, use it as base
+        // Build tenant-specific URL with subdomain as hostname
+        // Format: https://{subdomain}.cfapps.us10-001.hana.ondemand.com
+        
+        // Extract domain from approuter URL or use default
+        String domain = "cfapps.us10-001.hana.ondemand.com";
+        
         if (approuterBaseUrl != null && !approuterBaseUrl.isEmpty()) {
-            // Replace the pattern with tenant-specific subdomain
-            return approuterBaseUrl.replace("lms-approuter", subdomain + "-lms-approuter");
+            // Extract domain from APPROUTER_URL (e.g., https://org-space-app.cfapps.region.hana.ondemand.com)
+            String host = approuterBaseUrl.replace("https://", "").replace("http://", "");
+            int firstDot = host.indexOf('.');
+            if (firstDot > 0) {
+                domain = host.substring(firstDot + 1);
+            }
         }
         
-        // Default pattern: https://{subdomain}-lms-approuter.cfapps.us10-001.hana.ondemand.com
-        String baseUrl = "https://" + subdomain + "-lms-approuter.cfapps.us10-001.hana.ondemand.com";
-        return baseUrl + "/api/v1/application-info";
+        String tenantUrl = "https://" + subdomain + "." + domain;
+        
+        log.info("Built tenant URL: {} (requires route mapping: cf map-route lms-approuter {} --hostname {})", 
+                tenantUrl, domain, subdomain);
+        return tenantUrl;
     }
 }

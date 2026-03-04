@@ -7,7 +7,7 @@
       "source": "^/api/(.*)$",
       "target": "/api/$1",
       "destination": "lms-backend",
-      "authenticationType": "xsuaa",
+      "authenticationType": "none",
       "csrfProtection": false
     },
     {
